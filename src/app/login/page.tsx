@@ -50,7 +50,7 @@ export default function LoginPage() {
       await supabase.from('profiles').update({
         full_name: name,
         phone: phone,
-      }).eq('id', data.user.id)
+      } as never).eq('id', data.user.id)
 
       if (data.session) {
         // Auto-login automático (Se a confirmação de e-mail estiver desligada)

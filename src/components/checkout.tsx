@@ -63,15 +63,16 @@ export function Checkout({ open, onClose, onBack }: Props) {
       }
 
       // Try inserting into Supabase
-      await supabase.from('orders').insert(orderData)
+      await supabase.from('orders').insert(orderData as never)
 
       // Update profile stats if user is logged in
       if (user) {
-        const { data: profile } = await supabase
+        const result = await supabase
           .from('profiles')
           .select('total_spent, order_count')
           .eq('id', user.id)
           .single()
+        const profile = result.data as { total_spent: number, order_count: number } | null
 
         if (profile) {
           await supabase
@@ -79,7 +80,7 @@ export function Checkout({ open, onClose, onBack }: Props) {
             .update({
               total_spent: (profile.total_spent || 0) + total,
               order_count: (profile.order_count || 0) + 1,
-            })
+            } as never)
             .eq('id', user.id)
         }
       }

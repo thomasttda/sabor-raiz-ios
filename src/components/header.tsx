@@ -17,14 +17,14 @@ export function Header() {
 
   useEffect(() => {
     const checkAdminRole = async (userId: string) => {
-      const { data: profile, error } = await supabase
+      const result = await supabase
         .from('profiles')
         .select('role')
         .eq('id', userId)
         .single()
 
-      if (error) {
-        console.warn('[Header] Profile query error:', error.message)
+      if (result.error) {
+        console.warn('[Header] Profile query error:', result.error.message)
         // Fallback: check user metadata
         const { data: { user } } = await supabase.auth.getUser()
         if (user?.email === 'sabor@admin.com') {
@@ -33,6 +33,7 @@ export function Header() {
         return
       }
 
+      const profile = result.data as { role: string } | null
       if (profile?.role === 'admin') {
         setIsAdmin(true)
       }

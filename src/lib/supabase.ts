@@ -27,8 +27,27 @@ export type Database = {
           available: boolean
           created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['products']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['products']['Insert']>
+        Insert: {
+          id?: string
+          name: string
+          description?: string
+          price: number
+          image_url?: string
+          category: string
+          ingredients?: string[]
+          available?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string
+          price?: number
+          image_url?: string
+          category?: string
+          ingredients?: string[]
+          available?: boolean
+        }
       }
       orders: {
         Row: {
@@ -47,8 +66,35 @@ export type Database = {
           created_at: string
           user_id: string | null
         }
-        Insert: Omit<Database['public']['Tables']['orders']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['orders']['Insert']>
+        Insert: {
+          id?: string
+          order_number: string
+          customer_name: string
+          customer_phone: string
+          customer_address: string
+          customer_email?: string | null
+          items: OrderItem[]
+          subtotal: number
+          delivery_fee?: number
+          discount?: number
+          total: number
+          status?: OrderStatus
+          user_id?: string | null
+        }
+        Update: {
+          order_number?: string
+          customer_name?: string
+          customer_phone?: string
+          customer_address?: string
+          customer_email?: string | null
+          items?: OrderItem[]
+          subtotal?: number
+          delivery_fee?: number
+          discount?: number
+          total?: number
+          status?: OrderStatus
+          user_id?: string | null
+        }
       }
       banners: {
         Row: {
@@ -57,10 +103,24 @@ export type Database = {
           title: string
           active: boolean
           order: number
+          product_id: string | null
           created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['banners']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['banners']['Insert']>
+        Insert: {
+          id?: string
+          image_url: string
+          title?: string
+          active?: boolean
+          order?: number
+          product_id?: string | null
+        }
+        Update: {
+          image_url?: string
+          title?: string
+          active?: boolean
+          order?: number
+          product_id?: string | null
+        }
       }
       categories: {
         Row: {
@@ -70,8 +130,17 @@ export type Database = {
           order: number
           created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['categories']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['categories']['Insert']>
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          order?: number
+        }
+        Update: {
+          name?: string
+          slug?: string
+          order?: number
+        }
       }
       profiles: {
         Row: {
@@ -85,8 +154,23 @@ export type Database = {
           order_count: number
           created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['profiles']['Row'], 'created_at' | 'total_spent' | 'order_count'>
-        Update: Partial<Database['public']['Tables']['profiles']['Insert']>
+        Insert: {
+          id: string
+          email: string
+          full_name?: string
+          phone?: string
+          address?: string
+          role?: 'customer' | 'admin'
+        }
+        Update: {
+          email?: string
+          full_name?: string
+          phone?: string
+          address?: string
+          role?: 'customer' | 'admin'
+          total_spent?: number
+          order_count?: number
+        }
       }
     }
   }

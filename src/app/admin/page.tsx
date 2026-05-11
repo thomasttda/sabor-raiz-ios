@@ -144,14 +144,14 @@ export default function AdminPage() {
         return
       }
 
-      const { data: profile, error } = await supabase
+      const result = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
         .single()
 
-      if (error) {
-        console.warn('[Admin] Profile query error:', error.message)
+      if (result.error) {
+        console.warn('[Admin] Profile query error:', result.error.message)
         // Fallback: check by known admin email
         if (user.email === 'sabor@admin.com') {
           setIsAdmin(true)
@@ -160,6 +160,7 @@ export default function AdminPage() {
         return
       }
 
+      const profile = result.data as { role: string } | null
       if (profile?.role === 'admin') {
         setIsAdmin(true)
       }
@@ -260,7 +261,7 @@ export default function AdminPage() {
   }, [isAdmin, playAlert])
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
-    await supabase.from('orders').update({ status: newStatus }).eq('id', orderId)
+    await supabase.from('orders').update({ status: newStatus } as never).eq('id', orderId)
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
     )
@@ -285,11 +286,11 @@ export default function AdminPage() {
     }
 
     if (editingProduct) {
-      const { error } = await supabase.from('products').update(data).eq('id', editingProduct.id)
+      const { error } = await supabase.from('products').update(data as never).eq('id', editingProduct.id)
       if (error) { alert('Erro ao atualizar produto: ' + error.message); return; }
       setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? { ...p, ...data } : p)))
     } else {
-      const { data: newProduct, error } = await supabase.from('products').insert(data).select().single()
+      const { data: newProduct, error } = await supabase.from('products').insert(data as never).select().single()
       if (error) { alert('Erro ao criar produto: ' + error.message); return; }
       if (newProduct) setProducts((prev) => [...prev, newProduct])
     }
@@ -342,11 +343,11 @@ export default function AdminPage() {
     }
 
     if (editingBanner) {
-      const { error } = await supabase.from('banners').update(data).eq('id', editingBanner.id)
+      const { error } = await supabase.from('banners').update(data as never).eq('id', editingBanner.id)
       if (error) { alert('Erro ao atualizar banner: ' + error.message); return; }
       setBanners((prev) => prev.map((b) => (b.id === editingBanner.id ? { ...b, ...data } : b)))
     } else {
-      const { data: newBanner, error } = await supabase.from('banners').insert(data).select().single()
+      const { data: newBanner, error } = await supabase.from('banners').insert(data as never).select().single()
       if (error) { alert('Erro ao criar banner: ' + error.message); return; }
       if (newBanner) setBanners((prev) => [...prev, newBanner])
     }
@@ -697,7 +698,7 @@ export default function AdminPage() {
                           await supabase.from('products').insert({
                             name: p.name, description: p.description, price: p.price,
                             category: p.category, image_url: p.image_url, ingredients: p.ingredients, available: p.available
-                          });
+                          } as never);
                         }
                         window.location.reload();
                       }} className="mt-4" variant="outline">
@@ -873,7 +874,7 @@ export default function AdminPage() {
                         for (const b of DEMO_BANNERS) {
                           await supabase.from('banners').insert({
                             title: b.title, image_url: b.image_url, order: b.order, active: b.active
-                          });
+                          } as never);
                         }
                         window.location.reload();
                       }} className="mt-4" variant="outline">
