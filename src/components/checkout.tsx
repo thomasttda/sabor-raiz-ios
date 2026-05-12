@@ -1,14 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useCartStore } from '@/store/cart-store'
 import { supabase } from '@/lib/supabase'
 import { generateOrderNumber, formatCurrency } from '@/lib/utils'
-import { DELIVERY_FEE } from '@/lib/demo-data'
-import { MapPin, Phone, User, Loader2, ArrowLeft } from 'lucide-react'
+import { MapPin, Phone, User, Loader2, ArrowLeft, Truck } from 'lucide-react'
 import { Receipt } from './receipt'
 
 type Props = {
@@ -17,17 +16,40 @@ type Props = {
   onBack: () => void
 }
 
+type DeliveryZone = {
+  id: string
+  neighborhood: string
+  fee: number
+}
+
 export function Checkout({ open, onClose, onBack }: Props) {
   const { items, subtotal, clearCart } = useCartStore()
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
-  const [address, setAddress] = useState('')
+  const [address, setAddress] = useState('') // Street and number
+  const [selectedZoneId, setSelectedZoneId] = useState('')
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([])
   const [loading, setLoading] = useState(false)
   const [showReceipt, setShowReceipt] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
   const [orderDate, setOrderDate] = useState<Date>(new Date())
 
-  const total = subtotal() + DELIVERY_FEE
+  useEffect(() => {
+    if (open) {
+      supabase.from('delivery_zones').select('*').eq('active', true).order('neighborhood')
+        .then(({ data }) => {
+          if (data) {
+            const zones = data as DeliveryZone[]
+            setDeliveryZones(zones)
+            if (zones.length > 0) setSelectedZoneId(zones[0].id)
+          }
+        })
+    }
+  }, [open])
+
+  const selectedZone = deliveryZones.find(z => z.id === selectedZoneId)
+  const deliveryFee = selectedZone ? selectedZone.fee : 0
+  const total = subtotal() + deliveryFee
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,7 +67,7 @@ export function Checkout({ open, onClose, onBack }: Props) {
         order_number: orderNum,
         customer_name: name,
         customer_phone: phone,
-        customer_address: address,
+        customer_address: `${address} - ${selectedZone?.neighborhood || ''}`,
         customer_email: user?.email || null,
         items: items.map((item) => ({
           product_id: item.product_id,
@@ -55,7 +77,7 @@ export function Checkout({ open, onClose, onBack }: Props) {
           removed_ingredients: item.removed_ingredients,
         })),
         subtotal: subtotal(),
-        delivery_fee: DELIVERY_FEE,
+        delivery_fee: deliveryFee,
         discount: 0,
         total: total,
         status: 'pending' as const,
@@ -110,7 +132,7 @@ export function Checkout({ open, onClose, onBack }: Props) {
         customerAddress={address}
         items={items}
         subtotal={subtotal()}
-        deliveryFee={DELIVERY_FEE}
+        deliveryFee={deliveryFee}
         discount={0}
         total={total}
       />
@@ -152,10 +174,29 @@ export function Checkout({ open, onClose, onBack }: Props) {
 
           <div className="space-y-1">
             <label className="text-sm font-medium flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-primary" /> Endereço
+              <Truck className="h-4 w-4 text-primary" /> Bairro / Taxa de Entrega
+            </label>
+            <select
+              value={selectedZoneId}
+              onChange={(e) => setSelectedZoneId(e.target.value)}
+              className="flex h-10 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              required
+            >
+              <option value="" disabled>Selecione seu bairro...</option>
+              {deliveryZones.map(zone => (
+                <option key={zone.id} value={zone.id}>
+                  {zone.neighborhood} - {formatCurrency(zone.fee)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-primary" /> Endereço (Rua, Número e Comp)
             </label>
             <Input
-              placeholder="Rua, número, bairro"
+              placeholder="Rua das Flores, 123 - Apto 4"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               required
@@ -170,7 +211,7 @@ export function Checkout({ open, onClose, onBack }: Props) {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Taxa de Entrega</span>
-              <span>{formatCurrency(DELIVERY_FEE)}</span>
+              <span>{formatCurrency(deliveryFee)}</span>
             </div>
             <div className="border-t border-border pt-2 flex justify-between">
               <span className="font-bold">Total</span>
@@ -187,7 +228,7 @@ export function Checkout({ open, onClose, onBack }: Props) {
               type="submit"
               size="lg"
               className="flex-[2]"
-              disabled={loading || !name || !phone || !address}
+              disabled={loading || !name || !phone || !address || !selectedZoneId}
             >
               {loading ? (
                 <>

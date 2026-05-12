@@ -194,3 +194,67 @@ CREATE TRIGGER on_auth_user_created
 --   Email: sabor@admin.com
 --   Senha: raiz.sabor
 -- ============================================================
+
+-- ============================================================
+-- SAAS / ADMIN ADVANCED FEATURES
+-- ============================================================
+
+-- CASH FLOW
+CREATE TABLE IF NOT EXISTS public.cash_flow (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  type TEXT NOT NULL CHECK (type IN ('in', 'out')),
+  amount NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+  description TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.cash_flow ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins can manage cash flow" ON cash_flow
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- INVENTORY
+CREATE TABLE IF NOT EXISTS public.inventory (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  item_name TEXT NOT NULL,
+  quantity NUMERIC(10,2) NOT NULL DEFAULT 0,
+  min_quantity NUMERIC(10,2) NOT NULL DEFAULT 0,
+  unit TEXT NOT NULL, -- e.g., 'kg', 'unidades', 'litros'
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.inventory ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins can manage inventory" ON inventory
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- DELIVERY ZONES
+CREATE TABLE IF NOT EXISTS public.delivery_zones (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  neighborhood TEXT NOT NULL,
+  fee NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.delivery_zones ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public can read active delivery zones" ON delivery_zones
+  FOR SELECT USING (active = true);
+
+CREATE POLICY "Admins can manage delivery zones" ON delivery_zones
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- Insert some default delivery zones
+INSERT INTO public.delivery_zones (neighborhood, fee) VALUES
+('Centro', 5.99),
+('Bairro Alto', 7.99),
+('Vila Nova', 8.50)
+ON CONFLICT DO NOTHING;

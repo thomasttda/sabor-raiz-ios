@@ -172,6 +172,72 @@ export type Database = {
           order_count?: number
         }
       }
+      cash_flow: {
+        Row: {
+          id: string
+          type: 'in' | 'out'
+          amount: number
+          description: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          type: 'in' | 'out'
+          amount?: number
+          description: string
+          created_at?: string
+        }
+        Update: {
+          type?: 'in' | 'out'
+          amount?: number
+          description?: string
+        }
+      }
+      inventory: {
+        Row: {
+          id: string
+          item_name: string
+          quantity: number
+          min_quantity: number
+          unit: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          item_name: string
+          quantity?: number
+          min_quantity?: number
+          unit: string
+        }
+        Update: {
+          item_name?: string
+          quantity?: number
+          min_quantity?: number
+          unit?: string
+          updated_at?: string
+        }
+      }
+      delivery_zones: {
+        Row: {
+          id: string
+          neighborhood: string
+          fee: number
+          active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          neighborhood: string
+          fee?: number
+          active?: boolean
+        }
+        Update: {
+          neighborhood?: string
+          fee?: number
+          active?: boolean
+        }
+      }
     }
   }
 }

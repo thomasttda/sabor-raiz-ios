@@ -27,7 +27,15 @@ import {
   VolumeX,
   ImagePlus,
   MonitorPlay,
+  DollarSign,
+  ClipboardList,
+  MapPin,
 } from 'lucide-react'
+
+import { FinanceTab } from './components/finance-tab'
+import { InventoryTab } from './components/inventory-tab'
+import { DeliveryTab } from './components/delivery-tab'
+import { CustomerProfileModal } from './components/customer-profile'
 
 type Order = {
   id: string
@@ -60,6 +68,7 @@ type Customer = {
   email: string
   full_name: string
   phone: string
+  address?: string
   total_spent: number
   order_count: number
   created_at: string
@@ -86,7 +95,7 @@ const statusColors: Record<OrderStatus, string> = {
 }
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'banners' | 'customers'>('orders')
+  const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'banners' | 'customers' | 'finance' | 'inventory' | 'delivery'>('orders')
   const [orders, setOrders] = useState<Order[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -121,6 +130,10 @@ export default function AdminPage() {
     order: '0',
     product_id: '',
   })
+
+  // Customer Profile state
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [showCustomerModal, setShowCustomerModal] = useState(false)
 
   // Image Picker Helper
   const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>, callback: (base64: string) => void) => {
@@ -466,12 +479,15 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="flex gap-1 bg-secondary/50 p-1 rounded-xl mb-6">
+        <div className="flex flex-wrap gap-1 bg-secondary/50 p-1 rounded-xl mb-6">
           {[
             { key: 'orders' as const, label: 'Pedidos', icon: Package },
             { key: 'menu' as const, label: 'Cardápio', icon: UtensilsCrossed },
             { key: 'banners' as const, label: 'Banners', icon: MonitorPlay },
             { key: 'customers' as const, label: 'Clientes', icon: Users },
+            { key: 'finance' as const, label: 'Financeiro', icon: DollarSign },
+            { key: 'inventory' as const, label: 'Estoque', icon: ClipboardList },
+            { key: 'delivery' as const, label: 'Entregas', icon: MapPin },
           ].map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -965,7 +981,14 @@ export default function AdminPage() {
                       </thead>
                       <tbody>
                         {customers.map((customer) => (
-                          <tr key={customer.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                          <tr 
+                            key={customer.id} 
+                            className="border-b border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer"
+                            onClick={() => {
+                              setSelectedCustomer(customer)
+                              setShowCustomerModal(true)
+                            }}
+                          >
                             <td className="py-3 px-2">
                               <div>
                                 <p className="font-semibold text-sm">{customer.full_name || '—'}</p>
@@ -990,9 +1013,52 @@ export default function AdminPage() {
                 )}
               </div>
             )}
+            {/* ===== FINANCE TAB ===== */}
+            {activeTab === 'finance' && (
+              <div>
+                <h2 className="text-xl font-bold font-display mb-6 flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                  Painel Financeiro
+                </h2>
+                <FinanceTab orders={orders} />
+              </div>
+            )}
+
+            {/* ===== INVENTORY TAB ===== */}
+            {activeTab === 'inventory' && (
+              <div>
+                <h2 className="text-xl font-bold font-display mb-6 flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-primary" />
+                  Controle de Estoque
+                </h2>
+                <InventoryTab />
+              </div>
+            )}
+
+            {/* ===== DELIVERY TAB ===== */}
+            {activeTab === 'delivery' && (
+              <div>
+                <h2 className="text-xl font-bold font-display mb-6 flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  Gestão de Entregas
+                </h2>
+                <DeliveryTab />
+              </div>
+            )}
           </>
         )}
       </div>
+
+      <CustomerProfileModal
+        customer={selectedCustomer}
+        orders={orders}
+        open={showCustomerModal}
+        onClose={() => setShowCustomerModal(false)}
+        onUpdate={(updated) => {
+          setCustomers(customers.map(c => c.id === updated.id ? updated : c))
+          setSelectedCustomer(updated)
+        }}
+      />
     </div>
   )
 }
