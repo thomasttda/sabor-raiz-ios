@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, Plus, AlertTriangle, Edit, Trash2, ShoppingCart } from 'lucide-react'
+import { Loader2, Plus, Edit, Trash2, ShoppingCart } from 'lucide-react'
 
 type InventoryItem = {
   id: string
@@ -28,15 +28,15 @@ export function InventoryTab() {
     unit: 'unidades'
   })
 
-  useEffect(() => {
-    fetchInventory()
-  }, [])
-
   const fetchInventory = async () => {
     const { data } = await supabase.from('inventory').select('*').order('item_name')
     if (data) setItems(data)
     setLoading(false)
   }
+
+  useEffect(() => {
+    fetchInventory()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

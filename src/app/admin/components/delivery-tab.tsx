@@ -28,15 +28,15 @@ export function DeliveryTab() {
     active: true
   })
 
-  useEffect(() => {
-    fetchZones()
-  }, [])
-
   const fetchZones = async () => {
     const { data } = await supabase.from('delivery_zones').select('*').order('neighborhood')
     if (data) setZones(data)
     setLoading(false)
   }
+
+  useEffect(() => {
+    fetchZones()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

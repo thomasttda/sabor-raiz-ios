@@ -28,15 +28,15 @@ export function FinanceTab({ orders }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ type: 'in' as 'in' | 'out', amount: '', description: '' })
 
-  useEffect(() => {
-    fetchCashFlows()
-  }, [])
-
   const fetchCashFlows = async () => {
     const { data } = await supabase.from('cash_flow').select('*').order('created_at', { ascending: false })
     if (data) setCashFlows(data)
     setLoading(false)
   }
+
+  useEffect(() => {
+    fetchCashFlows()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
