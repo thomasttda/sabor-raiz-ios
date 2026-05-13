@@ -61,6 +61,7 @@ type Product = {
   category: string
   ingredients: string[]
   available: boolean
+  model_3d_url?: string | null
 }
 
 type Customer = {
@@ -118,6 +119,7 @@ export default function AdminPage() {
     ingredients: '',
     image_url: '',
     available: true,
+    model_3d_url: '',
   })
 
   // Banner form state
@@ -296,6 +298,7 @@ export default function AdminPage() {
       ingredients: productForm.ingredients.split(',').map((s) => s.trim()).filter(Boolean),
       image_url: productForm.image_url || '/products/default.jpg',
       available: productForm.available,
+      model_3d_url: productForm.model_3d_url || null,
     }
 
     if (editingProduct) {
@@ -328,6 +331,7 @@ export default function AdminPage() {
       ingredients: '',
       image_url: '',
       available: true,
+      model_3d_url: '',
     })
   }
 
@@ -341,6 +345,7 @@ export default function AdminPage() {
       ingredients: p.ingredients.join(', '),
       image_url: p.image_url,
       available: p.available,
+      model_3d_url: p.model_3d_url || '',
     })
     setShowProductForm(true)
   }
@@ -682,6 +687,19 @@ export default function AdminPage() {
                           onChange={(e) => setProductForm({ ...productForm, ingredients: e.target.value })}
                           placeholder="Pão, Carne, Queijo, ..."
                         />
+                      </div>
+                      <div className="space-y-1 sm:col-span-2">
+                        <label className="text-sm font-medium flex items-center gap-2">
+                          <ImageIcon className="h-4 w-4" /> URL do Modelo 3D (.glb)
+                        </label>
+                        <Input
+                          value={productForm.model_3d_url}
+                          onChange={(e) => setProductForm({ ...productForm, model_3d_url: e.target.value })}
+                          placeholder="https://exemplo.com/modelo.glb"
+                        />
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Cole o link direto para o arquivo 3D em formato GLB para habilitar a visualização interativa.
+                        </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <input
