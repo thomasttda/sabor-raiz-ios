@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
+import { SecurityWrapper } from "@/components/security-wrapper";
 
 export const metadata: Metadata = {
   title: "SABOR RAIZ | Delivery Artesanal Premium",
@@ -22,9 +22,11 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased min-h-screen">
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+        <SecurityWrapper>
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
+        </SecurityWrapper>
       </body>
     </html>
   );
