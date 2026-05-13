@@ -5,8 +5,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/utils'
 import { useCartStore } from '@/store/cart-store'
-import { Minus, Plus, ShoppingCart, X } from 'lucide-react'
+import { Minus, Plus, ShoppingCart, X, Box } from 'lucide-react'
 import { BeverageUpsell } from './beverage-upsell'
+import { Product3DViewer } from './product-3d-viewer'
 
 type Product = {
   id: string
@@ -17,6 +18,7 @@ type Product = {
   category: string
   ingredients: string[]
   available: boolean
+  model_3d_url?: string | null
 }
 
 type Props = {
@@ -30,6 +32,7 @@ export function ProductDetail({ product, open, onOpenChange }: Props) {
   const [showIngredients, setShowIngredients] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const [showUpsell, setShowUpsell] = useState(false)
+  const [show3D, setShow3D] = useState(false)
   const addItem = useCartStore((s) => s.addItem)
   const openCart = useCartStore((s) => s.openCart)
 
@@ -95,6 +98,23 @@ export function ProductDetail({ product, open, onOpenChange }: Props) {
               }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+            
+            {/* 3D Icon Button */}
+            {product.model_3d_url && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShow3D(true)
+                }}
+                className="absolute top-4 right-4 z-20 bg-primary/90 text-white p-2.5 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all animate-pulse-gold group"
+                title="Ver em 3D"
+              >
+                <Box className="h-6 w-6 group-hover:rotate-12 transition-transform" />
+                <span className="absolute -bottom-6 right-0 text-[10px] font-bold bg-black/50 px-2 py-0.5 rounded backdrop-blur-sm whitespace-nowrap">
+                  VER 3D
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Product Info */}
@@ -191,6 +211,14 @@ export function ProductDetail({ product, open, onOpenChange }: Props) {
         open={showUpsell}
         onClose={handleUpsellClose}
       />
+
+      {show3D && product.model_3d_url && (
+        <Product3DViewer
+          modelUrl={product.model_3d_url}
+          productName={product.name}
+          onClose={() => setShow3D(false)}
+        />
+      )}
     </>
   )
 }

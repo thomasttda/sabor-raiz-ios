@@ -18,6 +18,7 @@ export const DEMO_PRODUCTS = [
     category: 'hamburgueres',
     ingredients: ['PÃO BRIOCHE', 'BLEND DE CARNE 130G', '16OG DE MUSSARELA EMPANADA', 'FAROFA DE BACON', 'BARBECUE'],
     available: true,
+    model_3d_url: 'https://raw.githubusercontent.com/pmndrs/drei-assets/master/burger.glb',
   },
   {
     id: 'prod-2',

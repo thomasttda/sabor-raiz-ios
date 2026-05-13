@@ -25,6 +25,7 @@ export type Database = {
           category: string
           ingredients: string[]
           available: boolean
+          model_3d_url: string | null
           created_at: string
         }
         Insert: {
@@ -36,6 +37,7 @@ export type Database = {
           category: string
           ingredients?: string[]
           available?: boolean
+          model_3d_url?: string | null
           created_at?: string
         }
         Update: {
@@ -47,6 +49,7 @@ export type Database = {
           category?: string
           ingredients?: string[]
           available?: boolean
+          model_3d_url?: string | null
         }
       }
       orders: {
