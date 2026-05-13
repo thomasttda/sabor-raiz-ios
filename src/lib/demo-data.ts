@@ -18,6 +18,26 @@ export const DEMO_PRODUCTS = [
     category: 'hamburgueres',
     ingredients: ['PÃO BRIOCHE', 'BLEND DE CARNE 130G', '16OG DE MUSSARELA EMPANADA', 'FAROFA DE BACON', 'BARBECUE'],
     available: true,
+  },
+  {
+    id: 'prod-2',
+    name: 'Coca-Cola 350ml',
+    description: 'Lata gelada',
+    price: 6.50,
+    image_url: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=200&auto=format&fit=crop',
+    category: 'bebidas',
+    ingredients: [],
+    available: true,
+  },
+  {
+    id: 'prod-3',
+    name: 'Suco de Laranja 400ml',
+    description: 'Suco natural',
+    price: 9.90,
+    image_url: 'https://images.unsplash.com/photo-1600266110534-704c40553530?q=80&w=200&auto=format&fit=crop',
+    category: 'bebidas',
+    ingredients: [],
+    available: true,
   }
 ]
 

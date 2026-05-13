@@ -1,22 +1,64 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useCartStore } from '@/store/cart-store'
 import { DEMO_PRODUCTS } from '@/lib/demo-data'
 import { formatCurrency } from '@/lib/utils'
-import { GlassWater, X } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { GlassWater, X, Plus, Loader2 } from 'lucide-react'
 
 type Props = {
   open: boolean
   onClose: () => void
 }
 
+type Beverage = {
+  id: string
+  name: string
+  price: number
+  image_url: string
+  category: string
+}
+
 export function BeverageUpsell({ open, onClose }: Props) {
   const addItem = useCartStore((s) => s.addItem)
-  const beverages = DEMO_PRODUCTS.filter((p) => p.category === 'bebidas').slice(0, 3)
+  const [beverages, setBeverages] = useState<Beverage[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const handleAdd = (beverage: typeof beverages[0]) => {
+  useEffect(() => {
+    async function fetchBeverages() {
+      if (!open) return
+      
+      setLoading(true)
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('id, name, price, image_url, category')
+          .eq('category', 'bebidas')
+          .eq('available', true)
+          .limit(3)
+
+        if (error || !data || data.length === 0) {
+          // Fallback to demo data if DB is empty or error
+          const demoBevs = DEMO_PRODUCTS.filter((p) => p.category === 'bebidas').slice(0, 3)
+          setBeverages(demoBevs)
+        } else {
+          setBeverages(data)
+        }
+      } catch (err) {
+        const demoBevs = DEMO_PRODUCTS.filter((p) => p.category === 'bebidas').slice(0, 3)
+        setBeverages(demoBevs)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchBeverages()
+  }, [open])
+
+  const handleAdd = (beverage: Beverage) => {
     addItem({
       product_id: beverage.id,
       name: beverage.name,
@@ -29,50 +71,70 @@ export function BeverageUpsell({ open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <div className="flex justify-center mb-2">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <GlassWater className="h-8 w-8 text-primary" />
+      <DialogContent className="max-w-sm overflow-hidden p-0 bg-background border-none shadow-2xl">
+        <div className="bg-primary p-6 text-white text-center">
+          <div className="flex justify-center mb-3">
+            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm animate-bounce-subtle">
+              <GlassWater className="h-8 w-8 text-white" />
             </div>
           </div>
-          <DialogTitle className="text-center text-lg">
+          <DialogTitle className="text-xl font-bold mb-1 text-white">
             Que tal uma bebida gelada? 🧊
           </DialogTitle>
-          <DialogDescription className="text-center">
+          <DialogDescription className="text-white/80">
             Acompanhe seu pedido com uma bebida refrescante!
           </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-2 mt-2">
-          {beverages.map((bev) => (
-            <button
-              key={bev.id}
-              onClick={() => handleAdd(bev)}
-              className="w-full flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all duration-200 cursor-pointer group"
-            >
-              <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden">
-                <span className="text-2xl">🥤</span>
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-semibold text-sm">{bev.name}</p>
-                <p className="text-primary font-bold text-sm">{formatCurrency(bev.price)}</p>
-              </div>
-              <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
-                + Adicionar
-              </span>
-            </button>
-          ))}
         </div>
 
-        <Button
-          variant="ghost"
-          className="w-full mt-2"
-          onClick={onClose}
-        >
-          <X className="h-4 w-4 mr-1" />
-          Não, obrigado
-        </Button>
+        <div className="p-6 space-y-3">
+          {loading ? (
+            <div className="py-8 flex justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            beverages.map((bev) => (
+              <div
+                key={bev.id}
+                className="flex items-center gap-4 p-3 rounded-2xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all duration-300 group"
+              >
+                <div className="w-14 h-14 rounded-xl bg-secondary overflow-hidden flex-shrink-0">
+                  {bev.image_url ? (
+                    <img 
+                      src={bev.image_url} 
+                      alt={bev.name} 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-2xl">🥤</div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm truncate">{bev.name}</p>
+                  <p className="text-primary font-extrabold text-sm">{formatCurrency(bev.price)}</p>
+                </div>
+                <Button 
+                  size="icon" 
+                  className="rounded-full w-10 h-10 shadow-lg hover:scale-110 transition-transform"
+                  onClick={() => handleAdd(bev)}
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </div>
+            ))
+          )}
+
+          {!loading && beverages.length === 0 && (
+            <p className="text-center text-muted-foreground py-4">Nenhuma bebida disponível no momento.</p>
+          )}
+
+          <Button
+            variant="ghost"
+            className="w-full mt-2 text-muted-foreground hover:text-foreground"
+            onClick={onClose}
+          >
+            Não, obrigado
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   )
