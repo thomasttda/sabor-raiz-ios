@@ -7,13 +7,13 @@ export type CartItem = {
   price: number
   quantity: number
   image_url: string
-  removed_ingredients: string[]
+  removed_ingredients?: string[]
 }
 
 type CartStore = {
   items: CartItem[]
   isOpen: boolean
-  addItem: (item: Omit<CartItem, 'quantity'>) => void
+  addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void
   removeItem: (product_id: string) => void
   updateQuantity: (product_id: string, quantity: number) => void
   clearCart: () => void
@@ -30,22 +30,24 @@ export const useCartStore = create<CartStore>()(
       items: [],
       isOpen: false,
       addItem: (item) => {
+        const qty = item.quantity || 1
         const existing = get().items.find(
           (i) =>
             i.product_id === item.product_id &&
-            JSON.stringify(i.removed_ingredients.sort()) === JSON.stringify(item.removed_ingredients.sort())
+            JSON.stringify((i.removed_ingredients || []).sort()) === JSON.stringify((item.removed_ingredients || []).sort())
         )
         if (existing) {
           set({
             items: get().items.map((i) =>
               i.product_id === item.product_id &&
-              JSON.stringify(i.removed_ingredients.sort()) === JSON.stringify(item.removed_ingredients.sort())
-                ? { ...i, quantity: i.quantity + 1 }
+              JSON.stringify((i.removed_ingredients || []).sort()) === JSON.stringify((item.removed_ingredients || []).sort())
+                ? { ...i, quantity: i.quantity + qty }
                 : i
             ),
           })
         } else {
-          set({ items: [...get().items, { ...item, quantity: 1 }] })
+          const { quantity, ...itemWithoutQty } = item
+          set({ items: [...get().items, { ...itemWithoutQty, quantity: qty, removed_ingredients: item.removed_ingredients || [] }] })
         }
       },
       removeItem: (product_id) => {

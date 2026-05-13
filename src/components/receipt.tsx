@@ -115,7 +115,7 @@ _Gostaria de realizar o pagamento deste pedido._
                     {formatCurrency(item.price * item.quantity)}
                   </span>
                 </div>
-                {item.removed_ingredients.length > 0 && (
+                {item.removed_ingredients && item.removed_ingredients.length > 0 && (
                   <div className="text-[10px] text-gray-500 ml-8 mt-0.5">
                     Sem: {item.removed_ingredients.join(', ')}
                   </div>

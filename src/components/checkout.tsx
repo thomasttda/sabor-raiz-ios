@@ -49,9 +49,10 @@ export function Checkout({ open, onClose, onBack }: Props) {
           supabase.from('profiles').select('*').eq('id', user.id).single()
             .then(({ data: profile }) => {
               if (profile) {
-                setName(profile.full_name || '')
-                setPhone(profile.phone || '')
-                setAddress(profile.address || '')
+                const profileData = profile as any
+                setName(profileData.full_name || '')
+                setPhone(profileData.phone || '')
+                setAddress(profileData.address || '')
               }
             })
         }

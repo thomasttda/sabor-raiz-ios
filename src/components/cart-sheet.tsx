@@ -72,7 +72,7 @@ export function CartSheet() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="font-semibold text-sm truncate">{item.name}</h4>
-                  {item.removed_ingredients.length > 0 && (
+                  {item.removed_ingredients && item.removed_ingredients.length > 0 && (
                     <p className="text-xs text-muted-foreground mt-0.5">
                       Sem: {item.removed_ingredients.join(', ')}
                     </p>

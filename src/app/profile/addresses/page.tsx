@@ -14,26 +14,42 @@ export default function AddressesPage() {
 
   useEffect(() => {
     const fetchAddresses = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUser(user)
-        // Tentamos buscar de uma tabela 'addresses', se não existir usamos demo
-        const { data, error } = await supabase
-          .from('addresses')
-          .select('*')
-          .eq('user_id', user.id)
-        
-        if (!error && data) {
-          setAddresses(data)
-        } else {
-          // Fallback para demonstração se a tabela não existir ou estiver vazia
-          setAddresses([
-            { id: '1', label: 'Casa', street: 'Rua das Flores, 123', suburb: 'Jardim América', is_default: true, type: 'home' },
-            { id: '2', label: 'Trabalho', street: 'Av. Paulista, 1000', suburb: 'Bela Vista', is_default: false, type: 'work' },
-          ])
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          setUser(user)
+          // Tentamos buscar de uma tabela 'addresses'
+          const { data, error } = await supabase
+            .from('addresses')
+            .select('*')
+            .eq('user_id', user.id)
+          
+          if (!error && data && data.length > 0) {
+            setAddresses(data)
+          } else {
+            // Se a tabela não existir ou estiver vazia, usamos o endereço do perfil como padrão
+            const { data: prof } = await supabase.from('profiles').select('address').eq('id', user.id).single()
+            
+            const profileData = prof as any
+            const defaultAddress = profileData?.address || 'Endereço não cadastrado'
+            
+            setAddresses([
+              { 
+                id: 'default', 
+                label: 'Principal', 
+                street: defaultAddress, 
+                suburb: 'Cadastrado no perfil', 
+                is_default: true, 
+                type: 'home' 
+              }
+            ])
+          }
         }
+      } catch (err) {
+        console.error('Erro ao buscar endereços:', err)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     fetchAddresses()
   }, [])

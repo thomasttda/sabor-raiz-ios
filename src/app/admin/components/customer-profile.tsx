@@ -1,7 +1,7 @@
 /* eslint-disable */
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -40,7 +40,7 @@ export function CustomerProfileModal({ customer, orders, open, onClose, onUpdate
   })
 
   // Update form when customer changes
-  useState(() => {
+  useEffect(() => {
     if (customer) {
       setForm({
         full_name: customer.full_name || '',
@@ -48,7 +48,7 @@ export function CustomerProfileModal({ customer, orders, open, onClose, onUpdate
         address: customer.address || '',
       })
     }
-  })
+  }, [customer])
 
   if (!customer) return null
 

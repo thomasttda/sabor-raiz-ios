@@ -23,16 +23,17 @@ export default function PersonalDataPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUser(user)
-        const { data: prof } = await supabase
+        const { data: prof, error: profError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single()
         
-        if (prof) {
-          setProfile(prof)
-          setName(prof.full_name || '')
-          setPhone(prof.phone || '')
+        if (prof && !profError) {
+          const profileData = prof as any
+          setProfile(profileData)
+          setName(profileData.full_name || '')
+          setPhone(profileData.phone || '')
         }
       }
       setLoading(false)

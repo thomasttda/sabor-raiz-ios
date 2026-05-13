@@ -30,7 +30,7 @@ export const useStoreStatus = create<StoreStatus>((set, get) => ({
             image_url: 'open',
             active: false,
             order: 999
-          })
+          } as never)
           set({ isOpen: true, isLoading: false })
         } else {
           console.error('Error fetching store status:', error)
@@ -39,7 +39,8 @@ export const useStoreStatus = create<StoreStatus>((set, get) => ({
         return
       }
 
-      set({ isOpen: data.image_url === 'open', isLoading: false })
+      const statusData = data as any
+      set({ isOpen: statusData.image_url === 'open', isLoading: false })
     } catch (err) {
       console.error('Failed to refresh store status:', err)
       set({ isLoading: false })
@@ -54,7 +55,7 @@ export const useStoreStatus = create<StoreStatus>((set, get) => ({
     
     const { error } = await supabase
       .from('banners')
-      .update({ image_url: statusStr })
+      .update({ image_url: statusStr } as never)
       .eq('title', 'SYSTEM_STORE_STATUS')
 
     if (error) {
