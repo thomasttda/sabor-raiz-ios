@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SecurityWrapper } from "@/components/security-wrapper";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
   title: "SABOR RAIZ | Delivery Artesanal Premium",
