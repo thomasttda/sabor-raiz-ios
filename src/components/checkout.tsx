@@ -129,7 +129,7 @@ export function Checkout({ open, onClose, onBack }: Props) {
         orderDate={orderDate}
         customerName={name}
         customerPhone={phone}
-        customerAddress={address}
+        customerAddress={`${address} - ${selectedZone?.neighborhood || ''}`}
         items={items}
         subtotal={subtotal()}
         deliveryFee={deliveryFee}

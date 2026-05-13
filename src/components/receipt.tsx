@@ -3,7 +3,7 @@
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { Download, CheckCircle2 } from 'lucide-react'
+import { MessageCircle, CheckCircle2 } from 'lucide-react'
 import { useRef } from 'react'
 import type { CartItem } from '@/store/cart-store'
 
@@ -38,21 +38,35 @@ export function Receipt({
 }: Props) {
   const receiptRef = useRef<HTMLDivElement>(null)
 
-  const handleSave = async () => {
-    if (!receiptRef.current) return
-    try {
-      const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(receiptRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-      })
-      const link = document.createElement('a')
-      link.download = `cupom-sabor-raiz-${orderNumber}.png`
-      link.href = canvas.toDataURL('image/png')
-      link.click()
-    } catch (err) {
-      console.error('Error generating receipt image:', err)
-    }
+  const handlePayment = () => {
+    const itemsList = items.map(item => {
+      let itemStr = `*${item.quantity}x ${item.name}* (${formatCurrency(item.price * item.quantity)})`
+      if (item.removed_ingredients && item.removed_ingredients.length > 0) {
+        itemStr += `\n   _Sem: ${item.removed_ingredients.join(', ')}_`
+      }
+      return itemStr
+    }).join('\n')
+
+    const message = `
+*SABOR RAIZ - PEDIDO #${orderNumber}*
+---------------------------
+*Cliente:* ${customerName}
+*Endereço:* ${customerAddress}
+---------------------------
+*ITENS:*
+${itemsList}
+
+---------------------------
+*Subtotal:* ${formatCurrency(subtotal)}
+*Taxa de Entrega:* ${formatCurrency(deliveryFee)}
+${discount > 0 ? `*Desconto:* -${formatCurrency(discount)}\n` : ''}*TOTAL: ${formatCurrency(total)}*
+---------------------------
+_Gostaria de realizar o pagamento deste pedido._
+`.trim()
+
+    const encodedMessage = encodeURIComponent(message)
+    const whatsappUrl = `https://wa.me/5573998105271?text=${encodedMessage}`
+    window.open(whatsappUrl, '_blank')
   }
 
   return (
@@ -145,9 +159,9 @@ export function Receipt({
           <Button variant="outline" onClick={onClose} className="flex-1">
             Fechar
           </Button>
-          <Button onClick={handleSave} className="flex-1 gap-2">
-            <Download className="h-4 w-4" />
-            Salvar Comprovante
+          <Button onClick={handlePayment} className="flex-1 gap-2 bg-green-600 hover:bg-green-700 text-white">
+            <MessageCircle className="h-4 w-4" />
+            Realizar Pagamento
           </Button>
         </div>
       </DialogContent>
