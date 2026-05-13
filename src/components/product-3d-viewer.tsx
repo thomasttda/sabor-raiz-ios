@@ -4,15 +4,6 @@ import { useEffect, useState } from 'react'
 import { X, Rotate3d, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-// Declaration for the custom element
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'model-viewer': any
-    }
-  }
-}
-
 type Props = {
   modelUrl: string
   onClose: () => void
@@ -77,6 +68,7 @@ export function Product3DViewer({ modelUrl, onClose, productName }: Props) {
         </div>
 
         {/* Model Viewer */}
+        {/* @ts-ignore */}
         <model-viewer
           src={modelUrl}
           alt={`Modelo 3D de ${productName}`}
