@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   keywords: ["delivery", "hamburguer", "artesanal", "sabor raiz", "food"],
 };
 
+import { BottomNav } from "@/components/bottom-nav";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -22,10 +24,13 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased min-h-screen">
+      <body className="antialiased min-h-screen bg-gray-50/50">
         <SecurityWrapper>
           <ThemeProvider>
-            {children}
+            <div className="flex flex-col min-h-screen pb-20">
+              {children}
+            </div>
+            <BottomNav />
           </ThemeProvider>
         </SecurityWrapper>
       </body>

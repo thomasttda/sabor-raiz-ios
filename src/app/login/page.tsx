@@ -77,9 +77,15 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="flex flex-col items-center mb-6">
             <div className="relative w-20 h-20 mb-2">
-              <Image src="/logo.png" alt="Sabor Raiz" fill className="object-contain" />
+              <Image 
+                src="/logo.png" 
+                alt="Sabor Raiz" 
+                fill 
+                sizes="80px"
+                className="object-contain" 
+              />
             </div>
-            <h1 className="text-2xl font-bold font-display bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent">
+            <h1 className="text-2xl font-black text-brand-green tracking-tight">
               SABOR RAIZ
             </h1>
             <p className="text-sm text-muted-foreground mt-1">

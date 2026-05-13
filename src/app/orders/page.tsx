@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { ORDER_STATUS_LABELS, type OrderStatus } from '@/lib/supabase'
-import { Header } from '@/components/header'
-import { ArrowLeft, Package, Clock } from 'lucide-react'
+import { ChevronLeft, Package, Clock } from 'lucide-react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 type Order = {
   id: string
@@ -25,6 +25,8 @@ const statusVariant: Record<OrderStatus, 'default' | 'secondary' | 'outline' | '
   out_for_delivery: 'secondary',
   delivered: 'success',
 }
+
+
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
@@ -49,7 +51,6 @@ export default function OrdersPage() {
     }
     fetchOrders()
 
-    // Real-time updates for order status changes
     const channel = supabase
       .channel('my-orders')
       .on(
@@ -67,61 +68,66 @@ export default function OrdersPage() {
   }, [])
 
   return (
-    <div className="min-h-screen">
-      <Header />
-      <main className="max-w-2xl mx-auto px-4 py-6">
-        <Link href="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
-          <ArrowLeft className="h-4 w-4" /> Voltar ao Menu
+    <div className="min-h-screen bg-gray-50/50">
+      <header className="bg-white px-4 pt-6 pb-4 flex items-center justify-between sticky top-0 z-30">
+        <Link href="/">
+          <ChevronLeft size={28} className="text-brand-orange" />
         </Link>
+        <h1 className="text-2xl font-black text-brand-green">Pedidos</h1>
+        <div className="w-7" />
+      </header>
 
-        <h1 className="text-2xl font-bold font-display mb-6 flex items-center gap-2">
-          <Package className="h-6 w-6 text-primary" />
-          Meus Pedidos
-        </h1>
-
+      <main className="max-w-2xl mx-auto px-4 py-6 pb-24">
         {loading ? (
-          <div className="text-center py-12 text-muted-foreground">Carregando...</div>
+          <div className="text-center py-12 text-gray-400">Carregando seus pedidos...</div>
         ) : orders.length === 0 ? (
-          <div className="text-center py-12">
-            <Clock className="h-16 w-16 mx-auto mb-4 text-muted-foreground/20" />
-            <p className="text-muted-foreground">Nenhum pedido encontrado</p>
-            <p className="text-sm text-muted-foreground mt-1">Faça seu primeiro pedido!</p>
+          <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+              <Package size={40} />
+            </div>
+            <h2 className="text-xl font-bold text-brand-green mb-2">Sem pedidos por aqui</h2>
+            <p className="text-sm text-gray-400 px-10 mb-8">Parece que você ainda não fez nenhum pedido no Sabor Raiz.</p>
+            <Link 
+              href="/menu"
+              className="px-8 py-3 bg-brand-orange text-white rounded-2xl font-bold shadow-lg shadow-brand-orange/20"
+            >
+              Fazer meu primeiro pedido
+            </Link>
           </div>
         ) : (
           <div className="space-y-4">
             {orders.map((order) => (
-              <div key={order.id} className="bg-card border border-border rounded-2xl p-4 card-premium">
-                <div className="flex items-center justify-between mb-3">
+              <div key={order.id} className="bg-white border border-gray-100 rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all">
+                <div className="flex items-center justify-between mb-4">
                   <div>
-                    <span className="font-bold text-lg">#{order.order_number}</span>
-                    <p className="text-xs text-muted-foreground">
+                    <span className="font-black text-brand-green text-lg tracking-tight">#{order.order_number}</span>
+                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mt-0.5">
                       {formatDate(new Date(order.created_at))}
                     </p>
                   </div>
-                  <Badge variant={statusVariant[order.status]}>
+                  <div className={cn(
+                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
+                    order.status === 'delivered' ? "bg-green-100 text-green-700" : "bg-orange-100 text-brand-orange"
+                  )}>
                     {ORDER_STATUS_LABELS[order.status]}
-                  </Badge>
+                  </div>
                 </div>
 
-                <div className="space-y-1.5 border-t border-border pt-3">
+                <div className="space-y-2 border-t border-gray-50 pt-4 mb-4">
                   {order.items.map((item, idx) => (
                     <div key={idx} className="flex justify-between text-sm">
-                      <span>
-                        {item.quantity}x {item.name}
-                        {item.removed_ingredients?.length > 0 && (
-                          <span className="text-muted-foreground text-xs ml-1">
-                            (sem {item.removed_ingredients.join(', ')})
-                          </span>
-                        )}
+                      <span className="text-gray-600 font-medium">
+                        <span className="text-brand-orange font-bold mr-2">{item.quantity}x</span>
+                        {item.name}
                       </span>
-                      <span>{formatCurrency(item.price * item.quantity)}</span>
+                      <span className="font-bold text-brand-green">{formatCurrency(item.price * item.quantity)}</span>
                     </div>
                   ))}
                 </div>
 
-                <div className="flex justify-between items-center mt-3 pt-3 border-t border-border">
-                  <span className="font-semibold">Total</span>
-                  <span className="font-bold text-primary text-lg">{formatCurrency(order.total)}</span>
+                <div className="flex justify-between items-center pt-4 border-t border-gray-50">
+                  <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Total</span>
+                  <span className="font-black text-brand-price text-xl tracking-tight">{formatCurrency(order.total)}</span>
                 </div>
               </div>
             ))}

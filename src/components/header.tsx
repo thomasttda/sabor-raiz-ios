@@ -9,139 +9,144 @@ import { useEffect, useState } from 'react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import Link from 'next/link'
 
+import { MapPin, ChevronDown, Clock } from 'lucide-react'
+import { useStoreStatus } from '@/store/store-status'
+
 export function Header() {
-  const { theme, toggleTheme } = useThemeStore()
   const [user, setUser] = useState<SupabaseUser | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [showMenu, setShowMenu] = useState(false)
+  const [profile, setProfile] = useState<{ full_name?: string; avatar_url?: string } | null>(null)
+  const [address, setAddress] = useState<string>('Obtendo localização...')
+  const { isOpen: storeIsOpen, refresh: refreshStore } = useStoreStatus()
 
   useEffect(() => {
-    const checkAdminRole = async (userId: string) => {
-      const result = await supabase
+    refreshStore()
+    // 1. Get User and Profile
+    const fetchProfile = async (userId: string) => {
+      const { data } = await supabase
         .from('profiles')
-        .select('role')
+        .select('full_name, avatar_url')
         .eq('id', userId)
         .single()
-
-      if (result.error) {
-        console.warn('[Header] Profile query error:', result.error.message)
-        // Fallback: check user metadata
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user?.email === 'sabor@admin.com') {
-          setIsAdmin(true)
-        }
-        return
-      }
-
-      const profile = result.data as { role: string } | null
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-      }
+      
+      if (data) setProfile(data)
     }
 
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user)
-      if (data.user) {
-        checkAdminRole(data.user.id)
-      }
+      if (data.user) fetchProfile(data.user.id)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        checkAdminRole(session.user.id)
-      } else {
-        setIsAdmin(false)
-      }
-    })
-
-    return () => subscription.unsubscribe()
+    // 2. Get Geolocation and Address
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+            { headers: { 'Accept-Language': 'pt-BR' } }
+          );
+          const data = await response.json();
+          if (data && data.address) {
+            const road = data.address.road || data.address.pedestrian || '';
+            const house_number = data.address.house_number || '';
+            const suburb = data.address.suburb || data.address.neighbourhood || data.address.city_district || '';
+            
+            let formatted = road;
+            if (house_number) formatted += `, ${house_number}`;
+            if (suburb) formatted += (formatted ? ` - ${suburb}` : suburb);
+            
+            setAddress(formatted || data.display_name?.split(',')[0] || 'Localização encontrada');
+          } else {
+            setAddress('Localização não encontrada');
+          }
+        } catch (error) {
+          console.error("Error fetching address:", error);
+          setAddress('Erro ao obter endereço');
+        }
+      }, (error) => {
+        console.warn("Geolocation error:", error);
+        setAddress('Localização desativada');
+      }, {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      });
+    } else {
+      setAddress('GPS não suportado');
+    }
   }, [])
 
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    setIsAdmin(false)
-    setShowMenu(false)
-  }
-
   return (
-    <header className="sticky top-0 z-40 glass">
-      <div className="max-w-7xl mx-auto px-4 py-3">
-        <div className="flex items-center justify-between">
-          {/* Espaçador invisível para manter a logo centralizada */}
-          <div className="w-10 h-10" aria-hidden="true" />
-
-          {/* Logo */}
-          <Link href="/" className="flex flex-col items-center gap-1 group">
-            <div className="relative w-14 h-14 sm:w-16 sm:h-16 transition-transform duration-300 group-hover:scale-105">
-              <Image
-                src="/logo.png"
-                alt="Sabor Raiz Logo"
-                fill
-                className="object-contain drop-shadow-lg"
-                priority
-              />
-            </div>
-            <span className="font-display text-lg sm:text-xl font-bold tracking-wider bg-gradient-to-r from-gold via-gold-light to-gold bg-clip-text text-transparent dark:from-gold dark:via-gold-light dark:to-gold">
-              SABOR RAIZ
-            </span>
-          </Link>
-
-          {/* Profile */}
-          <div className="relative">
-            {user ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full"
-                onClick={() => setShowMenu(!showMenu)}
-                aria-label="Menu do perfil"
-              >
-                <User className="h-5 w-5" />
-              </Button>
-            ) : (
-              <Link href="/login">
-                <Button variant="ghost" size="icon" className="rounded-full" aria-label="Login">
-                  <LogIn className="h-5 w-5" />
-                </Button>
-              </Link>
-            )}
-
-            {showMenu && user && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                <div className="absolute right-0 top-12 z-50 w-56 rounded-xl border border-border bg-card shadow-2xl p-2 animate-fade-in">
-                  <div className="px-3 py-2 border-b border-border mb-1">
-                    <p className="text-sm font-semibold truncate">{user.email}</p>
-                  </div>
-                  <Link
-                    href="/orders"
-                    className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-secondary transition-colors"
-                    onClick={() => setShowMenu(false)}
-                  >
-                    <User className="h-4 w-4" /> Meus Pedidos
-                  </Link>
-                  {isAdmin && (
-                    <Link
-                      href="/admin"
-                      className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-secondary transition-colors text-gold"
-                      onClick={() => setShowMenu(false)}
-                    >
-                      <ShieldCheck className="h-4 w-4" /> Painel Admin
-                    </Link>
-                  )}
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-secondary transition-colors text-danger w-full text-left cursor-pointer"
-                  >
-                    <LogIn className="h-4 w-4" /> Sair
-                  </button>
-                </div>
-              </>
-            )}
+    <header className="bg-white px-4 pt-6 pb-2">
+      <div className="flex items-center justify-between">
+        {/* Logo & Greeting Section */}
+        <div className="flex items-center gap-4">
+          <div className="relative w-12 h-12">
+            <Image
+              src="/logo.png"
+              alt="Sabor Raiz"
+              fill
+              sizes="48px"
+              className="object-contain"
+              priority
+            />
           </div>
+          
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                {user ? (
+                  <span className="text-xl font-bold text-brand-green">
+                    Olá, {profile?.full_name?.split(' ')[0] || 'Cliente'} 👋
+                  </span>
+                ) : (
+                  <Link href="/login" className="flex flex-col">
+                    <span className="text-xl font-bold text-brand-green">Seja bem-vindo!</span>
+                    <span className="text-[10px] font-bold text-brand-orange uppercase tracking-wider">Toque para entrar ou cadastrar</span>
+                  </Link>
+                )}
+              </div>
+            <div className="flex items-center gap-1 text-xs text-brand-orange font-medium mt-0.5 max-w-[200px]">
+              <MapPin size={12} className="fill-brand-orange shrink-0" />
+              <span className="truncate">{address}</span>
+              <ChevronDown size={12} className="shrink-0" />
+            </div>
+
+            {/* Store Status Badge */}
+            <div className="mt-2 flex items-center">
+              {storeIsOpen ? (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 rounded-full border border-green-100 animate-fade-in">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+                  <span className="text-[10px] font-black text-green-700 uppercase tracking-wider">Estamos funcionando</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-red-50 rounded-full border border-red-100 animate-fade-in">
+                  <div className="w-2 h-2 bg-red-500 rounded-full" />
+                  <span className="text-[10px] font-black text-red-700 uppercase tracking-wider">Fechados no momento</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Profile Section */}
+        <div className="relative">
+          <Link href="/profile">
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm ring-1 ring-gray-100">
+              {profile?.avatar_url ? (
+                <Image 
+                  src={profile.avatar_url} 
+                  alt="Profile" 
+                  fill 
+                  sizes="48px"
+                  className="object-cover" 
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                  <User className="text-gray-400" size={24} />
+                </div>
+              )}
+            </div>
+          </Link>
         </div>
       </div>
     </header>

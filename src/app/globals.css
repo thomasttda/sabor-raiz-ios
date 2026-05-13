@@ -15,57 +15,54 @@
   --color-accent-foreground: var(--accent-fg);
   --color-border: var(--border-color);
   --color-ring: var(--ring-color);
-  --color-gold: #D4AF37;
-  --color-gold-light: #E8C84A;
-  --color-gold-dark: #B8962E;
-  --color-amber-warm: #F59E0B;
-  --color-success: #22C55E;
-  --color-warning: #EAB308;
-  --color-danger: #EF4444;
-  --radius-lg: 0.75rem;
-  --radius-md: 0.5rem;
-  --radius-sm: 0.25rem;
+  --color-brand-green: #14532D;
+  --color-brand-orange: #D9480F;
+  --color-brand-orange-light: #FF9F66;
+  --color-brand-price: #C2410C;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
 
   --font-sans: 'Inter', 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
   --font-display: 'Outfit', 'Inter', sans-serif;
 }
 
-/* ============ DARK PREMIUM THEME ============ */
+/* ============ BRAND THEME (LIGHT BY DEFAULT) ============ */
 :root,
+.light {
+  --bg: #FFFFFF;
+  --fg: #1a1a1a;
+  --card-bg: #FFFFFF;
+  --card-fg: #1a1a1a;
+  --primary: #14532D;
+  --primary-fg: #FFFFFF;
+  --secondary: #F3F4F6;
+  --secondary-fg: #1a1a1a;
+  --muted: #F3F4F6;
+  --muted-fg: #6B7280;
+  --accent: #D9480F;
+  --accent-fg: #FFFFFF;
+  --border-color: #E5E7EB;
+  --ring-color: #14532D;
+}
+
+/* ============ DARK THEME ============ */
 .dark {
   --bg: #09090b;
   --fg: #fafafa;
   --card-bg: #18181b;
   --card-fg: #fafafa;
-  --primary: #D4AF37;
-  --primary-fg: #09090b;
+  --primary: #14532D;
+  --primary-fg: #fafafa;
   --secondary: #27272a;
   --secondary-fg: #fafafa;
   --muted: #27272a;
   --muted-fg: #a1a1aa;
-  --accent: #D4AF37;
+  --accent: #D9480F;
   --accent-fg: #09090b;
   --border-color: #3f3f46;
-  --ring-color: #D4AF37;
-}
-
-/* ============ LIGHT PREMIUM THEME ============ */
-.light {
-  --bg: #FFFBF0;
-  --fg: #1a1a1a;
-  --card-bg: #FFFFFF;
-  --card-fg: #1a1a1a;
-  --primary: #D97706;
-  --primary-fg: #FFFFFF;
-  --secondary: #F5F0E8;
-  --secondary-fg: #1a1a1a;
-  --muted: #F5F0E8;
-  --muted-fg: #737373;
-  --accent: #D97706;
-  --accent-fg: #FFFFFF;
-  --border-color: #E5DFD3;
-  --ring-color: #D97706;
+  --ring-color: #14532D;
 }
 
 @layer base {

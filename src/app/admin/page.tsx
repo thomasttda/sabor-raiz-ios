@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, cn } from '@/lib/utils'
 import { ORDER_STATUS_LABELS, type OrderStatus } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,10 +32,19 @@ import {
   MapPin,
 } from 'lucide-react'
 
+import { useStoreStatus } from '@/store/store-status'
 import { FinanceTab } from './components/finance-tab'
 import { InventoryTab } from './components/inventory-tab'
 import { DeliveryTab } from './components/delivery-tab'
 import { CustomerProfileModal } from './components/customer-profile'
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle,
+  SheetDescription
+} from '@/components/ui/sheet'
+import { Switch } from '@/components/ui/switch'
 
 type Order = {
   id: string
@@ -151,7 +160,10 @@ export default function AdminPage() {
   }
 
   // Check admin auth
+  const { isOpen: storeIsOpen, toggle: toggleStore, refresh: refreshStore, isLoading: storeLoading } = useStoreStatus()
+
   useEffect(() => {
+    refreshStore()
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
@@ -438,7 +450,13 @@ export default function AdminPage() {
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
               <div className="relative w-8 h-8">
-                <Image src="/logo.png" alt="Sabor Raiz" fill className="object-contain" />
+                <Image 
+                  src="/logo.png" 
+                  alt="Sabor Raiz" 
+                  fill 
+                  sizes="32px"
+                  className="object-contain" 
+                />
               </div>
             </Link>
             <div>
@@ -458,14 +476,42 @@ export default function AdminPage() {
               </div>
             )}
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className="rounded-full"
-            >
-              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            </Button>
+            <div className="flex items-center gap-4">
+            {/* Store Status Toggle */}
+            <div className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl border transition-all duration-500 ${
+              storeIsOpen 
+                ? "bg-green-50 border-green-100 text-green-700 shadow-[0_2px_10px_rgba(34,197,94,0.1)]" 
+                : "bg-red-50 border-red-100 text-red-700 shadow-[0_2px_10px_rgba(239,68,68,0.1)]"
+            }`}>
+              <div className="flex flex-col items-end">
+                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-tighter opacity-60 leading-none">Status</span>
+                <span className="text-xs sm:text-sm font-black leading-none">{storeIsOpen ? 'ABERTO' : 'FECHADO'}</span>
+              </div>
+              <input 
+                type="checkbox"
+                checked={storeIsOpen} 
+                onChange={toggleStore}
+                disabled={storeLoading}
+                className="w-10 h-5 bg-gray-200 rounded-full appearance-none checked:bg-green-500 relative cursor-pointer transition-colors before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 before:transition-transform checked:before:translate-x-5 disabled:opacity-50"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className="rounded-xl"
+              >
+                {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+              </Button>
+              <div className="w-px h-6 bg-border mx-1" />
+              <div className="flex flex-col items-end hidden sm:flex">
+                <span className="text-xs font-bold">Painel Administrativo</span>
+                <span className="text-[10px] text-muted-foreground">Logado como Sabor</span>
+              </div>
+            </div>
+          </div>
 
             <Button
               variant="ghost"
@@ -612,113 +658,136 @@ export default function AdminPage() {
                   </Button>
                 </div>
 
-                {/* Product Form */}
-                {showProductForm && (
-                  <div className="bg-card border border-border rounded-2xl p-6 mb-6 animate-fade-in">
-                    <h3 className="text-lg font-bold mb-4">
-                      {editingProduct ? 'Editar Produto' : 'Novo Produto'}
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Nome</label>
-                        <Input
-                          value={productForm.name}
-                          onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                          placeholder="Nome do produto"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Preço (R$)</label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={productForm.price}
-                          onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                          placeholder="0.00"
-                        />
-                      </div>
-                      <div className="space-y-1 sm:col-span-2">
-                        <label className="text-sm font-medium">Descrição</label>
-                        <Input
-                          value={productForm.description}
-                          onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                          placeholder="Descrição do produto"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Categoria</label>
-                        <select
-                          value={productForm.category}
-                          onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-                          className="flex h-10 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          <option value="hamburgueres">Hambúrgueres</option>
-                          <option value="combos">Combos</option>
-                          <option value="bebidas">Bebidas</option>
-                          <option value="sobremesas">Sobremesas</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Imagem do Produto (PNG/JPG/GIF)</label>
-                        <div className="flex gap-2">
-                          <Input
-                            value={productForm.image_url}
-                            onChange={(e) => setProductForm({ ...productForm, image_url: e.target.value })}
-                            placeholder="URL ou selecione um arquivo..."
-                          />
-                          <Button type="button" variant="outline" className="shrink-0 relative overflow-hidden" aria-label="Escolher Imagem">
-                            <ImagePlus className="h-4 w-4" />
-                            <input 
-                              type="file" 
-                              accept="image/png, image/jpeg, image/gif" 
-                              className="absolute inset-0 opacity-0 cursor-pointer"
-                              onChange={(e) => handleImagePick(e, (base64) => setProductForm({ ...productForm, image_url: base64 }))} 
+                {/* Product Form Slide-up */}
+                <Sheet open={showProductForm} onOpenChange={setShowProductForm}>
+                  <SheetContent side="bottom" className="h-[90vh] sm:h-auto p-0 overflow-hidden border-none rounded-t-[32px]">
+                    <div className="flex flex-col h-full max-h-[90vh]">
+                      {/* Scrollable Content */}
+                      <div className="flex-1 overflow-y-auto p-6 pb-32">
+                        <SheetHeader className="mb-8">
+                          <SheetTitle className="text-2xl font-black text-brand-green">
+                            {editingProduct ? 'Editar Produto' : 'Novo Produto'}
+                          </SheetTitle>
+                          <SheetDescription>
+                            Preencha as informações para {editingProduct ? 'atualizar' : 'cadastrar'} o item.
+                          </SheetDescription>
+                        </SheetHeader>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <label className="text-xs font-black text-brand-green uppercase tracking-widest">Nome</label>
+                            <Input
+                              value={productForm.name}
+                              onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                              placeholder="Ex: Burger Sabor Raiz"
+                              className="h-14 rounded-2xl border-gray-100 focus:border-brand-orange transition-all"
                             />
-                          </Button>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-black text-brand-green uppercase tracking-widest">Preço (R$)</label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={productForm.price}
+                              onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+                              placeholder="0.00"
+                              className="h-14 rounded-2xl border-gray-100 focus:border-brand-orange transition-all"
+                            />
+                          </div>
+                          <div className="space-y-2 sm:col-span-2">
+                            <label className="text-xs font-black text-brand-green uppercase tracking-widest">Descrição</label>
+                            <Input
+                              value={productForm.description}
+                              onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                              placeholder="Descreva os sabores deste produto..."
+                              className="h-14 rounded-2xl border-gray-100 focus:border-brand-orange transition-all"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-black text-brand-green uppercase tracking-widest">Categoria</label>
+                            <select
+                              value={productForm.category}
+                              onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                              className="flex h-14 w-full rounded-2xl border border-gray-100 bg-white px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-orange transition-all"
+                            >
+                              <option value="hamburgueres">Hambúrgueres</option>
+                              <option value="combos">Combos</option>
+                              <option value="bebidas">Bebidas</option>
+                              <option value="sobremesas">Sobremesas</option>
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-black text-brand-green uppercase tracking-widest">Imagem do Produto</label>
+                            <div className="flex gap-2">
+                              <Input
+                                value={productForm.image_url}
+                                onChange={(e) => setProductForm({ ...productForm, image_url: e.target.value })}
+                                placeholder="URL ou selecione..."
+                                className="h-14 rounded-2xl border-gray-100 focus:border-brand-orange transition-all"
+                              />
+                              <Button type="button" variant="outline" className="h-14 w-14 shrink-0 relative overflow-hidden rounded-2xl border-gray-100" aria-label="Escolher Imagem">
+                                <ImagePlus className="h-5 w-5 text-brand-orange" />
+                                <input 
+                                  type="file" 
+                                  accept="image/png, image/jpeg, image/gif" 
+                                  className="absolute inset-0 opacity-0 cursor-pointer"
+                                  onChange={(e) => handleImagePick(e, (base64) => setProductForm({ ...productForm, image_url: base64 }))} 
+                                />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="space-y-2 sm:col-span-2">
+                            <label className="text-xs font-black text-brand-green uppercase tracking-widest">Ingredientes (separados por vírgula)</label>
+                            <Input
+                              value={productForm.ingredients}
+                              onChange={(e) => setProductForm({ ...productForm, ingredients: e.target.value })}
+                              placeholder="Pão, Carne, Queijo, ..."
+                              className="h-14 rounded-2xl border-gray-100 focus:border-brand-orange transition-all"
+                            />
+                          </div>
+                          <div className="space-y-2 sm:col-span-2">
+                            <label className="text-xs font-black text-brand-green uppercase tracking-widest flex items-center gap-2">
+                              <ImageIcon size={14} className="text-brand-orange" /> URL do Modelo 3D (.glb)
+                            </label>
+                            <Input
+                              value={productForm.model_3d_url}
+                              onChange={(e) => setProductForm({ ...productForm, model_3d_url: e.target.value })}
+                              placeholder="https://exemplo.com/modelo.glb"
+                              className="h-14 rounded-2xl border-gray-100 focus:border-brand-orange transition-all"
+                            />
+                          </div>
+                          <div className="flex items-center gap-4 p-5 bg-gray-50 rounded-3xl sm:col-span-2 border border-gray-100">
+                            <input
+                              type="checkbox"
+                              id="product-available-new"
+                              checked={productForm.available}
+                              onChange={(e) => setProductForm({ ...productForm, available: e.target.checked })}
+                              className="w-6 h-6 accent-[#00a335] rounded-lg"
+                            />
+                            <label htmlFor="product-available-new" className="text-sm font-bold text-brand-green">Disponível para venda no aplicativo</label>
+                          </div>
                         </div>
-                        {productForm.image_url && productForm.image_url.startsWith('data:image') && (
-                          <div className="mt-2 text-xs text-success font-medium">✔ Imagem local carregada pronta para salvar</div>
-                        )}
                       </div>
-                      <div className="space-y-1 sm:col-span-2">
-                        <label className="text-sm font-medium">Ingredientes (separados por vírgula)</label>
-                        <Input
-                          value={productForm.ingredients}
-                          onChange={(e) => setProductForm({ ...productForm, ingredients: e.target.value })}
-                          placeholder="Pão, Carne, Queijo, ..."
-                        />
-                      </div>
-                      <div className="space-y-1 sm:col-span-2">
-                        <label className="text-sm font-medium flex items-center gap-2">
-                          <ImageIcon className="h-4 w-4" /> URL do Modelo 3D (.glb)
-                        </label>
-                        <Input
-                          value={productForm.model_3d_url}
-                          onChange={(e) => setProductForm({ ...productForm, model_3d_url: e.target.value })}
-                          placeholder="https://exemplo.com/modelo.glb"
-                        />
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          Cole o link direto para o arquivo 3D em formato GLB para habilitar a visualização interativa.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={productForm.available}
-                          onChange={(e) => setProductForm({ ...productForm, available: e.target.checked })}
-                          className="w-4 h-4 accent-primary"
-                        />
-                        <label className="text-sm font-medium">Disponível</label>
+
+                      {/* Fixed Footer */}
+                      <div className="p-6 bg-white border-t border-gray-100 flex gap-4 z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+                        <Button 
+                          variant="outline" 
+                          onClick={resetProductForm} 
+                          className="flex-1 h-14 rounded-2xl border-gray-100 font-bold text-gray-400 hover:bg-gray-50 transition-all"
+                        >
+                          Cancelar
+                        </Button>
+                        <Button 
+                          onClick={handleSaveProduct} 
+                          className="flex-1 h-14 rounded-2xl bg-[#00a335] hover:bg-[#008a2d] text-white font-bold shadow-lg shadow-green-900/20 transition-all active:scale-95"
+                        >
+                          {editingProduct ? 'Salvar' : 'Criar'}
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-4">
-                      <Button variant="outline" onClick={resetProductForm}>Cancelar</Button>
-                      <Button onClick={handleSaveProduct}>
-                        {editingProduct ? 'Salvar Alterações' : 'Criar Produto'}
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                  </SheetContent>
+                </Sheet>
 
                 {/* Products List */}
                 <div className="space-y-3">
@@ -813,89 +882,112 @@ export default function AdminPage() {
                   </Button>
                 </div>
 
-                {/* Banner Form */}
-                {showBannerForm && (
-                  <div className="bg-card border border-border rounded-2xl p-6 mb-6 animate-fade-in">
-                    <h3 className="text-lg font-bold mb-4">
-                      {editingBanner ? 'Editar Banner' : 'Novo Banner'}
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1 sm:col-span-2">
-                        <label className="text-sm font-medium">Título (Opcional)</label>
-                        <Input
-                          value={bannerForm.title}
-                          onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
-                          placeholder="Ex: Promoção de Inauguração"
-                        />
+                {/* Banner Form Slide-up */}
+                <Sheet open={showBannerForm} onOpenChange={setShowBannerForm}>
+                  <SheetContent side="bottom" className="h-[80vh] sm:h-auto p-0 overflow-hidden border-none rounded-t-[32px]">
+                    <div className="flex flex-col h-full max-h-[80vh]">
+                      {/* Scrollable Content */}
+                      <div className="flex-1 overflow-y-auto p-6 pb-32">
+                        <SheetHeader className="mb-8">
+                          <SheetTitle className="text-2xl font-black text-brand-green">
+                            {editingBanner ? 'Editar Banner' : 'Novo Banner'}
+                          </SheetTitle>
+                          <SheetDescription>
+                            Configure as imagens promocionais da página inicial.
+                          </SheetDescription>
+                        </SheetHeader>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div className="space-y-2 sm:col-span-2">
+                            <label className="text-xs font-black text-brand-green uppercase tracking-widest">Título (Opcional)</label>
+                            <Input
+                              value={bannerForm.title}
+                              onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
+                              placeholder="Ex: Promoção de Inauguração"
+                              className="h-14 rounded-2xl border-gray-100 focus:border-brand-orange transition-all"
+                            />
+                          </div>
+                          
+                          <div className="space-y-2 sm:col-span-2">
+                            <label className="text-xs font-black text-brand-green uppercase tracking-widest">Imagem do Banner</label>
+                            <div className="flex gap-2">
+                              <Input
+                                value={bannerForm.image_url}
+                                onChange={(e) => setBannerForm({ ...bannerForm, image_url: e.target.value })}
+                                placeholder="URL ou selecione..."
+                                className="h-14 rounded-2xl border-gray-100 focus:border-brand-orange transition-all"
+                              />
+                              <Button type="button" variant="outline" className="h-14 w-14 shrink-0 relative overflow-hidden rounded-2xl border-gray-100" aria-label="Escolher Imagem">
+                                <ImagePlus className="h-5 w-5 text-brand-orange" />
+                                <input 
+                                  type="file" 
+                                  accept="image/png, image/jpeg, image/gif" 
+                                  className="absolute inset-0 opacity-0 cursor-pointer"
+                                  onChange={(e) => handleImagePick(e, (base64) => setBannerForm({ ...bannerForm, image_url: base64 }))} 
+                                />
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-black text-brand-green uppercase tracking-widest">Ordem</label>
+                            <Input
+                              type="number"
+                              value={bannerForm.order}
+                              onChange={(e) => setBannerForm({ ...bannerForm, order: e.target.value })}
+                              placeholder="Ex: 1"
+                              className="h-14 rounded-2xl border-gray-100 focus:border-brand-orange transition-all"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-black text-brand-green uppercase tracking-widest">Linkar a um Produto</label>
+                            <select
+                              value={bannerForm.product_id}
+                              onChange={(e) => setBannerForm({ ...bannerForm, product_id: e.target.value })}
+                              className="flex h-14 w-full rounded-2xl border border-gray-100 bg-white px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-orange transition-all"
+                            >
+                              <option value="">Nenhum (Apenas imagem)</option>
+                              {products.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="flex items-center gap-4 p-5 bg-gray-50 rounded-3xl sm:col-span-2 border border-gray-100">
+                            <input
+                              type="checkbox"
+                              id="banner-active-new"
+                              checked={bannerForm.active}
+                              onChange={(e) => setBannerForm({ ...bannerForm, active: e.target.checked })}
+                              className="w-6 h-6 accent-[#00a335] rounded-lg"
+                            />
+                            <label htmlFor="banner-active-new" className="text-sm font-bold text-brand-green">Banner Ativo e visível</label>
+                          </div>
+                        </div>
                       </div>
                       
-                      <div className="space-y-1 sm:col-span-2">
-                        <label className="text-sm font-medium">Imagem do Banner (PNG/JPG/GIF)</label>
-                        <div className="flex gap-2">
-                          <Input
-                            value={bannerForm.image_url}
-                            onChange={(e) => setBannerForm({ ...bannerForm, image_url: e.target.value })}
-                            placeholder="URL ou selecione um arquivo..."
-                          />
-                          <Button type="button" variant="outline" className="shrink-0 relative overflow-hidden" aria-label="Escolher Imagem">
-                            <ImagePlus className="h-4 w-4" />
-                            <input 
-                              type="file" 
-                              accept="image/png, image/jpeg, image/gif" 
-                              className="absolute inset-0 opacity-0 cursor-pointer"
-                              onChange={(e) => handleImagePick(e, (base64) => setBannerForm({ ...bannerForm, image_url: base64 }))} 
-                            />
-                          </Button>
-                        </div>
-                        {bannerForm.image_url && bannerForm.image_url.startsWith('data:image') && (
-                          <div className="mt-2 text-xs text-success font-medium">✔ Imagem carregada pronta para salvar</div>
-                        )}
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Ordem de Exibição</label>
-                        <Input
-                          type="number"
-                          value={bannerForm.order}
-                          onChange={(e) => setBannerForm({ ...bannerForm, order: e.target.value })}
-                          placeholder="Ex: 1"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Linkar a um Produto (Opcional)</label>
-                        <select
-                          value={bannerForm.product_id}
-                          onChange={(e) => setBannerForm({ ...bannerForm, product_id: e.target.value })}
-                          className="flex h-10 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      {/* Fixed Footer */}
+                      <div className="p-6 bg-white border-t border-gray-100 flex gap-4 z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+                        <Button 
+                          variant="outline" 
+                          onClick={resetBannerForm} 
+                          className="flex-1 h-14 rounded-2xl border-gray-100 font-bold text-gray-400 hover:bg-gray-50 transition-all"
                         >
-                          <option value="">Nenhum (Apenas imagem)</option>
-                          {products.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name} ({formatCurrency(p.price)})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="flex items-center gap-2 mt-6">
-                        <input
-                          type="checkbox"
-                          checked={bannerForm.active}
-                          onChange={(e) => setBannerForm({ ...bannerForm, active: e.target.checked })}
-                          className="w-4 h-4 accent-primary"
-                        />
-                        <label className="text-sm font-medium">Ativo</label>
+                          Cancelar
+                        </Button>
+                        <Button 
+                          onClick={handleSaveBanner} 
+                          className="flex-1 h-14 rounded-2xl bg-[#00a335] hover:bg-[#008a2d] text-white font-bold shadow-lg shadow-green-900/20 transition-all active:scale-95"
+                        >
+                          {editingBanner ? 'Salvar' : 'Criar'}
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-4">
-                      <Button variant="outline" onClick={resetBannerForm}>Cancelar</Button>
-                      <Button onClick={handleSaveBanner}>
-                        {editingBanner ? 'Salvar Alterações' : 'Criar Banner'}
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                  </SheetContent>
+                </Sheet>
 
                 {/* Banners List */}
                 <div className="space-y-3">
