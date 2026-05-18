@@ -16,9 +16,15 @@ export default async function MenuPage() {
       .order('order')
   ])
 
+  const safeProducts = (productsRes.data || []).map(p => ({
+    ...p,
+    image_url: p.image_url?.length > 1000 && p.image_url.startsWith('data:image') ? '' : p.image_url,
+    gallery_urls: p.gallery_urls?.map((url: string) => url.length > 1000 && url.startsWith('data:image') ? '' : url)
+  }))
+
   return (
     <MenuPageClient 
-      initialProducts={productsRes.data || []} 
+      initialProducts={safeProducts} 
       initialCategories={categoriesRes.data || []} 
     />
   )

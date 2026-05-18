@@ -20,5 +20,11 @@ export default async function HomePage() {
       .order('order')
   ])
 
-  return <HomePageClient initialProducts={productsRes.data || []} initialBanners={bannersRes.data || []} />
+  const safeProducts = (productsRes.data || []).map(p => ({
+    ...p,
+    image_url: p.image_url?.length > 1000 && p.image_url.startsWith('data:image') ? '' : p.image_url,
+    gallery_urls: p.gallery_urls?.map((url: string) => url.length > 1000 && url.startsWith('data:image') ? '' : url)
+  }))
+
+  return <HomePageClient initialProducts={safeProducts} initialBanners={bannersRes.data || []} />
 }
