@@ -22,6 +22,7 @@ export type Database = {
           description: string
           price: number
           image_url: string
+          gallery_urls: string[] | null
           category: string
           ingredients: string[]
           available: boolean
@@ -34,6 +35,7 @@ export type Database = {
           description?: string
           price: number
           image_url?: string
+          gallery_urls?: string[] | null
           category: string
           ingredients?: string[]
           available?: boolean
@@ -46,6 +48,7 @@ export type Database = {
           description?: string
           price?: number
           image_url?: string
+          gallery_urls?: string[] | null
           category?: string
           ingredients?: string[]
           available?: boolean
