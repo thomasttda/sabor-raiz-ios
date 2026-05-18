@@ -29,17 +29,10 @@ type Props = {
   onOpenChange: (open: boolean) => void
 }
 
-const ACCOMPANIMENTS = [
-  { id: '1', name: 'Arroz Branco', price: 0, image: '/sides/arroz.png', included: true },
-  { id: '2', name: 'Farofa', price: 4, image: '/sides/farofa.png' },
-  { id: '3', name: 'Vinagrete', price: 3, image: '/sides/vinagrete.png' },
-  { id: '4', name: 'Batata Frita', price: 8, image: '/sides/batata.png' },
-]
 
 export function ProductDetail({ product, open, onOpenChange }: Props) {
   const [viewMode, setViewMode] = useState<'photo' | '3d'>('photo')
   const [quantity, setQuantity] = useState(1)
-  const [selectedSides, setSelectedSides] = useState<string[]>(['1'])
   const [showBeverageUpsell, setShowBeverageUpsell] = useState(false)
   const [modelLoading, setModelLoading] = useState(false)
   const addItem = useCartStore((s) => s.addItem)
@@ -57,11 +50,6 @@ export function ProductDetail({ product, open, onOpenChange }: Props) {
     }
   }, [viewMode, has3D])
 
-  const toggleSide = (id: string) => {
-    setSelectedSides(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    )
-  }
 
   const handleAddToCart = () => {
     addItem({
@@ -243,46 +231,6 @@ export function ProductDetail({ product, open, onOpenChange }: Props) {
               {product.description || "Delicioso prato preparado com ingredientes selecionados, garantindo o melhor sabor e qualidade para sua refeição."}
             </p>
 
-            {/* Sides Section */}
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-brand-green mb-4">Escolha os Acompanhamentos</h3>
-              <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-                {ACCOMPANIMENTS.map((side) => {
-                  const isSelected = selectedSides.includes(side.id)
-                  return (
-                    <button
-                      key={side.id}
-                      onClick={() => toggleSide(side.id)}
-                      className={cn(
-                        "flex flex-col items-center justify-center p-3 rounded-2xl border min-w-[100px] transition-all",
-                        isSelected 
-                          ? "bg-green-50/50 border-brand-green shadow-sm ring-1 ring-brand-green/20" 
-                          : "bg-white border-gray-100"
-                      )}
-                    >
-                      <div className="w-12 h-12 relative mb-2 rounded-lg overflow-hidden">
-                        <img src={side.image} alt={side.name} className="w-full h-full object-cover" />
-                      </div>
-                      <span className={cn(
-                        "text-[11px] font-bold mb-0.5",
-                        isSelected ? "text-brand-green" : "text-gray-700"
-                      )}>{side.name}</span>
-                      <span className={cn(
-                        "text-[10px] font-bold",
-                        isSelected ? "text-brand-green" : "text-brand-orange"
-                      )}>
-                        {side.price === 0 ? "Incluso" : `+${formatCurrency(side.price)}`}
-                      </span>
-                      {isSelected && (
-                        <div className="absolute top-2 right-2 bg-brand-green text-white rounded-full p-0.5">
-                          <Check size={8} strokeWidth={4} />
-                        </div>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
 
             {/* Observations */}
             <div className="mb-4">
