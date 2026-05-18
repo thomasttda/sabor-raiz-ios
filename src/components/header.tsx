@@ -11,32 +11,52 @@ import Link from 'next/link'
 
 import { MapPin, ChevronDown, Clock } from 'lucide-react'
 import { useStoreStatus } from '@/store/store-status'
+import { cacheGet, cacheSet } from '@/lib/cache'
+
+const ADDRESS_CACHE_KEY = 'header:address'
+const USER_CACHE_KEY = 'header:user'
+const PROFILE_CACHE_KEY = 'header:profile'
 
 export function Header() {
-  const [user, setUser] = useState<SupabaseUser | null>(null)
-  const [profile, setProfile] = useState<{ full_name?: string; avatar_url?: string } | null>(null)
-  const [address, setAddress] = useState<string>('Obtendo localização...')
+  const [user, setUser] = useState<SupabaseUser | null>(
+    () => cacheGet<SupabaseUser>(USER_CACHE_KEY) ?? null
+  )
+  const [profile, setProfile] = useState<{ full_name?: string; avatar_url?: string } | null>(
+    () => cacheGet<{ full_name?: string; avatar_url?: string }>(PROFILE_CACHE_KEY) ?? null
+  )
+  const [address, setAddress] = useState<string>(
+    () => cacheGet<string>(ADDRESS_CACHE_KEY) ?? 'Obtendo localização...'
+  )
   const { isOpen: storeIsOpen, refresh: refreshStore } = useStoreStatus()
 
   useEffect(() => {
     refreshStore()
-    // 1. Get User and Profile
-    const fetchProfile = async (userId: string) => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('full_name, avatar_url')
-        .eq('id', userId)
-        .single()
-      
-      if (data) setProfile(data)
+
+    // 1. Get User and Profile (cache por 5 minutos)
+    if (!cacheGet(USER_CACHE_KEY)) {
+      const fetchProfile = async (userId: string) => {
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', userId)
+          .single()
+
+        if (data) {
+          setProfile(data)
+          cacheSet(PROFILE_CACHE_KEY, data, 300_000) // 5 min
+        }
+      }
+
+      supabase.auth.getUser().then(({ data }) => {
+        setUser(data.user)
+        cacheSet(USER_CACHE_KEY, data.user, 300_000) // 5 min
+        if (data.user) fetchProfile(data.user.id)
+      })
     }
 
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
-      if (data.user) fetchProfile(data.user.id)
-    })
+    // 2. Get Geolocation (cache por 10 minutos — endereço não muda enquanto o cliente está parado)
+    if (cacheGet<string>(ADDRESS_CACHE_KEY)) return
 
-    // 2. Get Geolocation and Address
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(async (position) => {
         const { latitude, longitude } = position.coords;
@@ -50,12 +70,14 @@ export function Header() {
             const road = data.address.road || data.address.pedestrian || '';
             const house_number = data.address.house_number || '';
             const suburb = data.address.suburb || data.address.neighbourhood || data.address.city_district || '';
-            
+
             let formatted = road;
             if (house_number) formatted += `, ${house_number}`;
             if (suburb) formatted += (formatted ? ` - ${suburb}` : suburb);
-            
-            setAddress(formatted || data.display_name?.split(',')[0] || 'Localização encontrada');
+
+            const finalAddress = formatted || data.display_name?.split(',')[0] || 'Localização encontrada'
+            setAddress(finalAddress)
+            cacheSet(ADDRESS_CACHE_KEY, finalAddress, 600_000) // 10 min
           } else {
             setAddress('Localização não encontrada');
           }
@@ -67,9 +89,9 @@ export function Header() {
         console.warn("Geolocation error:", error);
         setAddress('Localização desativada');
       }, {
-        enableHighAccuracy: true,
+        enableHighAccuracy: false,   // false = GPS mais rápido (usa cell/wifi)
         timeout: 5000,
-        maximumAge: 0
+        maximumAge: 600_000          // reutiliza posição em cache por 10 min
       });
     } else {
       setAddress('GPS não suportado');

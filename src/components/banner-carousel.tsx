@@ -4,6 +4,7 @@ import useEmblaCarousel from 'embla-carousel-react'
 import Autoplay from 'embla-carousel-autoplay'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { cacheGet, cacheSet } from '@/lib/cache'
 import { ProductDetail } from './product-detail'
 
 type Banner = {
@@ -26,9 +27,13 @@ type Product = {
   available: boolean
 }
 
-export function BannerCarousel() {
-  const [banners, setBanners] = useState<Banner[]>([])
-  const [loading, setLoading] = useState(true)
+const BANNERS_KEY = 'banners:active'
+
+export function BannerCarousel({ initialBanners }: { initialBanners?: Banner[] }) {
+  const [banners, setBanners] = useState<Banner[]>(
+    () => initialBanners || cacheGet<Banner[]>(BANNERS_KEY) || []
+  )
+  const [loading, setLoading] = useState(() => !initialBanners && !cacheGet<Banner[]>(BANNERS_KEY))
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { loop: true, align: 'center' },
     [Autoplay({ delay: 3000, stopOnInteraction: false })]
@@ -38,17 +43,44 @@ export function BannerCarousel() {
   const [sheetOpen, setSheetOpen] = useState(false)
 
   useEffect(() => {
+    // If we have initialBanners, set them in cache
+    if (initialBanners && initialBanners.length > 0) {
+      cacheSet(BANNERS_KEY, initialBanners)
+    }
+
+    if (initialBanners || cacheGet<Banner[]>(BANNERS_KEY)) {
+      setLoading(false)
+      // Background refresh
+      supabase
+        .from('banners')
+        .select('*')
+        .eq('active', true)
+        .not('title', 'eq', 'SYSTEM_STORE_STATUS')
+        .order('order')
+        .then(({ data }) => {
+          if (data) {
+            setBanners(data)
+            cacheSet(BANNERS_KEY, data)
+          }
+        })
+      return
+    }
+
     setLoading(true)
     supabase
       .from('banners')
       .select('*')
       .eq('active', true)
+      .not('title', 'eq', 'SYSTEM_STORE_STATUS')
       .order('order')
       .then(({ data }) => {
-        if (data) setBanners(data)
+        if (data) {
+          setBanners(data)
+          cacheSet(BANNERS_KEY, data)
+        }
         setLoading(false)
       })
-  }, [])
+  }, [initialBanners])
 
   useEffect(() => {
     if (!emblaApi) return

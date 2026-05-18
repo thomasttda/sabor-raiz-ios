@@ -5,6 +5,11 @@ import { DEMO_PRODUCTS, DEMO_CATEGORIES } from '@/lib/demo-data'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency } from '@/lib/utils'
 import { ProductDetail } from './product-detail'
+import { cacheGet, cacheSet } from '@/lib/cache'
+import Image from 'next/image'
+
+const PRODUCTS_KEY = 'menu:products'
+const CATEGORIES_KEY = 'menu:categories'
 
 type Product = {
   id: string
@@ -25,29 +30,60 @@ type Category = {
 }
 
 export function ProductGrid() {
-  const [products, setProducts] = useState<Product[]>(DEMO_PRODUCTS)
-  const [categories, setCategories] = useState<Category[]>(DEMO_CATEGORIES)
+  const [products, setProducts] = useState<Product[]>(
+    () => cacheGet<Product[]>(PRODUCTS_KEY) ?? DEMO_PRODUCTS
+  )
+  const [categories, setCategories] = useState<Category[]>(
+    () => cacheGet<Category[]>(CATEGORIES_KEY) ?? DEMO_CATEGORIES
+  )
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
 
   useEffect(() => {
-    // Try loading from Supabase
-    supabase
-      .from('products')
-      .select('*')
-      .eq('available', true)
-      .then(({ data }) => {
-        if (data && data.length > 0) setProducts(data)
-      })
+    // Produtos
+    const cachedProducts = cacheGet<Product[]>(PRODUCTS_KEY)
+    if (!cachedProducts) {
+      supabase
+        .from('products')
+        .select('*')
+        .eq('available', true)
+        .order('created_at', { ascending: true })
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            setProducts(data)
+            cacheSet(PRODUCTS_KEY, data)
+          }
+        })
+    } else {
+      // Background refresh
+      supabase
+        .from('products')
+        .select('*')
+        .eq('available', true)
+        .order('created_at', { ascending: true })
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            setProducts(data)
+            cacheSet(PRODUCTS_KEY, data)
+          }
+        })
+    }
 
-    supabase
-      .from('categories')
-      .select('*')
-      .order('order')
-      .then(({ data }) => {
-        if (data && data.length > 0) setCategories(data)
-      })
+    // Categorias
+    const cachedCategories = cacheGet<Category[]>(CATEGORIES_KEY)
+    if (!cachedCategories) {
+      supabase
+        .from('categories')
+        .select('*')
+        .order('order')
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            setCategories(data)
+            cacheSet(CATEGORIES_KEY, data)
+          }
+        })
+    }
   }, [])
 
   const filtered = activeCategory
@@ -99,13 +135,13 @@ export function ProductGrid() {
               <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-card to-primary/5 flex items-center justify-center">
                 <span className="text-4xl">🍔</span>
               </div>
-              <img
+              <Image
                 src={product.image_url}
                 alt={product.name}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none'
-                }}
+                fill
+                sizes="(max-width: 640px) 50vw, 33vw"
+                className="object-cover transition-transform duration-500 group-hover:scale-110"
+                loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 

@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS products (
   description TEXT DEFAULT '',
   price NUMERIC NOT NULL,
   image_url TEXT DEFAULT '',
+  gallery_urls TEXT[] DEFAULT '{}',
   category TEXT NOT NULL,
   ingredients TEXT[] DEFAULT '{}',
   available BOOLEAN DEFAULT true,

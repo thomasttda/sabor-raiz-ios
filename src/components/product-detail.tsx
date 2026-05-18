@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/utils'
 import { useCartStore } from '@/store/cart-store'
 import { BeverageUpsell } from './beverage-upsell'
-import { Minus, Plus, Star, Clock, Flame, ChevronLeft, Heart, Boxes, Camera, Scan, Check } from 'lucide-react'
+import { Minus, Plus, Star, Clock, Flame, ChevronLeft, Heart, Boxes, Camera, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import useEmblaCarousel from 'embla-carousel-react'
 
 type Product = {
   id: string
@@ -19,6 +20,7 @@ type Product = {
   ingredients: string[]
   available: boolean
   model_3d_url?: string | null
+  gallery_urls?: string[] | null
 }
 
 type Props = {
@@ -35,19 +37,21 @@ const ACCOMPANIMENTS = [
 ]
 
 export function ProductDetail({ product, open, onOpenChange }: Props) {
-  const [viewMode, setViewMode] = useState<'photo' | '3d' | 'ar'>('photo')
+  const [viewMode, setViewMode] = useState<'photo' | '3d'>('photo')
   const [quantity, setQuantity] = useState(1)
   const [selectedSides, setSelectedSides] = useState<string[]>(['1'])
   const [showBeverageUpsell, setShowBeverageUpsell] = useState(false)
   const [modelLoading, setModelLoading] = useState(false)
   const addItem = useCartStore((s) => s.addItem)
   const openCart = useCartStore((s) => s.openCart)
+  const [emblaRef] = useEmblaCarousel({ loop: true })
 
   const has3D = Boolean(product.model_3d_url)
+  const allImages = [product.image_url, ...(product.gallery_urls || [])].filter(Boolean)
 
-  // Load @google/model-viewer when user switches to 3D/AR mode
+  // Load @google/model-viewer when user switches to 3D mode
   useEffect(() => {
-    if ((viewMode === '3d' || viewMode === 'ar') && has3D) {
+    if (viewMode === '3d' && has3D) {
       setModelLoading(true)
       import('@google/model-viewer').finally(() => setModelLoading(false))
     }
@@ -124,15 +128,6 @@ export function ProductDetail({ product, open, onOpenChange }: Props) {
                     >
                       3D
                     </button>
-                    <button 
-                      onClick={() => setViewMode('ar')}
-                      className={cn(
-                        "px-4 py-1.5 rounded-full text-xs font-bold transition-all",
-                        viewMode === 'ar' ? "bg-brand-orange text-white" : "text-white/60"
-                      )}
-                    >
-                      AR
-                    </button>
                   </>
                 )}
               </div>
@@ -145,11 +140,33 @@ export function ProductDetail({ product, open, onOpenChange }: Props) {
             {/* Media Content */}
             <div className="w-full h-full flex items-center justify-center">
               {viewMode === 'photo' ? (
-                <img 
-                  src={product.image_url} 
-                  alt={product.name} 
-                  className="w-full h-full object-cover"
-                />
+                allImages.length > 1 ? (
+                  <div className="w-full h-full overflow-hidden" ref={emblaRef}>
+                    <div className="flex h-full">
+                      {allImages.map((imgUrl, i) => (
+                        <div key={i} className="flex-[0_0_100%] min-w-0 h-full relative">
+                          <img 
+                            src={imgUrl} 
+                            alt={`${product.name} - Imagem ${i + 1}`} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    {/* Dots Overlay */}
+                    <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-1.5 z-10">
+                      {allImages.map((_, i) => (
+                        <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/80" />
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <img 
+                    src={product.image_url} 
+                    alt={product.name} 
+                    className="w-full h-full object-cover"
+                  />
+                )
               ) : has3D ? (
                 <div className="relative w-full h-full bg-gradient-to-br from-[#0a1a0a] via-[#1a2e1a] to-[#4a2500]">
                   {modelLoading && (
@@ -170,7 +187,6 @@ export function ProductDetail({ product, open, onOpenChange }: Props) {
                     environment-image="neutral"
                     exposure="1.2"
                     interaction-prompt="none"
-                    ar={viewMode === 'ar' ? true : undefined}
                     onLoad={() => setModelLoading(false)}
                     style={{
                       width: '100%',
@@ -186,17 +202,6 @@ export function ProductDetail({ product, open, onOpenChange }: Props) {
                 </div>
               )}
             </div>
-
-            {/* AR Button Overlay — só em modo 3D */}
-            {viewMode === '3d' && has3D && (
-              <button 
-                onClick={() => setViewMode('ar')}
-                className="absolute bottom-6 right-6 bg-white rounded-full px-6 py-3 flex items-center gap-2 shadow-2xl animate-bounce-subtle"
-              >
-                <Scan size={20} className="text-brand-green" />
-                <span className="text-sm font-bold text-brand-green uppercase tracking-wider">Ver em AR</span>
-              </button>
-            )}
 
             {/* 360 Badge */}
             <div className="absolute bottom-6 left-6 px-3 py-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 flex items-center gap-2 text-white">

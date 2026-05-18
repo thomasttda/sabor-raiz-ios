@@ -15,6 +15,10 @@ export const DEMO_PRODUCTS = [
     description: 'BURGUER CROCKS',
     price: 37.99,
     image_url: 'https://i.postimg.cc/zBcjSTc1/CROCKS.jpg',
+    gallery_urls: [
+      'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=600&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=600&auto=format&fit=crop'
+    ],
     category: 'hamburgueres',
     ingredients: ['PÃO BRIOCHE', 'BLEND DE CARNE 130G', '16OG DE MUSSARELA EMPANADA', 'FAROFA DE BACON', 'BARBECUE'],
     available: true,
@@ -26,6 +30,7 @@ export const DEMO_PRODUCTS = [
     description: 'Lata gelada',
     price: 6.50,
     image_url: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=200&auto=format&fit=crop',
+    gallery_urls: [],
     category: 'bebidas',
     ingredients: [],
     available: true,
@@ -36,6 +41,7 @@ export const DEMO_PRODUCTS = [
     description: 'Suco natural',
     price: 9.90,
     image_url: 'https://images.unsplash.com/photo-1600266110534-704c40553530?q=80&w=200&auto=format&fit=crop',
+    gallery_urls: [],
     category: 'bebidas',
     ingredients: [],
     available: true,

@@ -45,10 +45,13 @@ export function ProductCard({ product, variant = 'grid', onSelect, isNew }: Prod
 
       {/* Imagem */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
-        <img
+        <Image
           src={product.image_url}
           alt={product.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          fill
+          sizes="(max-width: 640px) 50vw, 220px"
+          className="object-cover transition-transform duration-500 group-hover:scale-110"
+          loading="lazy"
         />
         {/* Rating overlay if grid */}
         {!isHorizontal && (

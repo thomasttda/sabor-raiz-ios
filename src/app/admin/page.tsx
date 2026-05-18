@@ -71,6 +71,7 @@ type Product = {
   ingredients: string[]
   available: boolean
   model_3d_url?: string | null
+  gallery_urls?: string[] | null
 }
 
 type Customer = {
@@ -129,6 +130,7 @@ export default function AdminPage() {
     category: 'hamburgueres',
     ingredients: '',
     image_url: '',
+    gallery_urls: '',
     available: true,
     model_3d_url: '',
   })
@@ -334,6 +336,7 @@ export default function AdminPage() {
       category: productForm.category,
       ingredients: productForm.ingredients.split(',').map((s) => s.trim()).filter(Boolean),
       image_url: productForm.image_url || '/products/default.jpg',
+      gallery_urls: productForm.gallery_urls ? productForm.gallery_urls.split(',').map((s) => s.trim()).filter(Boolean) : [],
       available: productForm.available === true, // força boolean explícito
       model_3d_url: productForm.model_3d_url || null,
     }
@@ -368,6 +371,7 @@ export default function AdminPage() {
       category: 'hamburgueres',
       ingredients: '',
       image_url: '',
+      gallery_urls: '',
       available: true,
       model_3d_url: '',
     })
@@ -382,6 +386,7 @@ export default function AdminPage() {
       category: p.category,
       ingredients: p.ingredients.join(', '),
       image_url: p.image_url,
+      gallery_urls: p.gallery_urls ? p.gallery_urls.join(', ') : '',
       available: p.available,
       model_3d_url: p.model_3d_url || '',
     })
@@ -753,7 +758,7 @@ export default function AdminPage() {
                             </select>
                           </div>
                           <div className="space-y-2">
-                            <label className="text-xs font-black text-brand-green uppercase tracking-widest">Imagem do Produto</label>
+                            <label className="text-xs font-black text-brand-green uppercase tracking-widest">Imagem Principal</label>
                             <div className="flex gap-2">
                               <Input
                                 value={productForm.image_url}
@@ -771,6 +776,16 @@ export default function AdminPage() {
                                 />
                               </Button>
                             </div>
+                          </div>
+                          <div className="space-y-2 sm:col-span-2">
+                            <label className="text-xs font-black text-brand-green uppercase tracking-widest">Galeria de Imagens (URLs separadas por vírgula)</label>
+                            <Input
+                              value={productForm.gallery_urls}
+                              onChange={(e) => setProductForm({ ...productForm, gallery_urls: e.target.value })}
+                              placeholder="https://exemplo.com/foto1.jpg, https://exemplo.com/foto2.jpg"
+                              className="h-14 rounded-2xl border-gray-100 focus:border-brand-orange transition-all"
+                            />
+                            <p className="text-[10px] text-gray-500">Adicione as URLs extras do produto para os clientes deslizarem pro lado (Carrossel).</p>
                           </div>
                           <div className="space-y-2 sm:col-span-2">
                             <label className="text-xs font-black text-brand-green uppercase tracking-widest">Ingredientes (separados por vírgula)</label>

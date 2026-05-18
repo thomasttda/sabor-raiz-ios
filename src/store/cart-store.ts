@@ -75,7 +75,13 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'sabor-raiz-cart',
-      partialize: (state) => ({ items: state.items }),
+      partialize: (state) => ({
+        items: state.items.map((item) => ({
+          ...item,
+          // Se a imagem for um base64 gigante, não salva no localStorage para evitar QuotaExceededError
+          image_url: item.image_url?.length > 1000 ? '' : item.image_url,
+        })),
+      }),
     }
   )
 )
