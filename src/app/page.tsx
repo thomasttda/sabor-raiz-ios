@@ -21,6 +21,7 @@ export default function HomePage() {
       .from('products')
       .select('*')
       .eq('available', true)
+      .order('created_at', { ascending: true }) // ORDER BY estável — evita mudança de posição após UPDATE
       .then(({ data }) => {
         if (data) setProducts(data)
         setLoading(false)
@@ -32,9 +33,7 @@ export default function HomePage() {
     setIsDetailOpen(true)
   }
 
-  // Separar produtos por seções para demonstração
-  const bestSellers = products.slice(0, 3)
-  const news = products.slice(0, 2)
+  // Sem slice — todos os produtos aparecem
 
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -49,20 +48,11 @@ export default function HomePage() {
         </div>
 
         {!loading && products.length > 0 && (
-          <>
-            <HorizontalProductList 
-              title="Mais Pedidos" 
-              products={bestSellers} 
-              onSelect={handleSelectProduct}
-            />
-
-            <HorizontalProductList 
-              title="Novidades" 
-              products={news} 
-              onSelect={handleSelectProduct}
-              isNew
-            />
-          </>
+          <HorizontalProductList 
+            title="Nosso Cardápio" 
+            products={products} 
+            onSelect={handleSelectProduct}
+          />
         )}
 
         {!loading && products.length === 0 && (

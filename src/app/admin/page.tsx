@@ -108,6 +108,8 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'banners' | 'customers' | 'finance' | 'inventory' | 'delivery'>('orders')
   const [orders, setOrders] = useState<Order[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const [productsError, setProductsError] = useState<string | null>(null)
+  const [loadingProducts, setLoadingProducts] = useState(false)
   const [customers, setCustomers] = useState<Customer[]>([])
   const [banners, setBanners] = useState<Banner[]>([])
   const [loading, setLoading] = useState(true)
@@ -239,26 +241,42 @@ export default function AdminPage() {
     }
   }, [soundEnabled])
 
+  // Dedicated products loader with error handling
+  const loadProducts = useCallback(async () => {
+    setLoadingProducts(true)
+    setProductsError(null)
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) {
+      console.error('[Admin] Products fetch error:', error)
+      setProductsError(error.message)
+    } else {
+      setProducts(data ?? [])
+    }
+    setLoadingProducts(false)
+  }, [])
+
   // Fetch data
   useEffect(() => {
     if (!isAdmin) return
 
     const fetchData = async () => {
-      const [ordersRes, productsRes, customersRes, bannersRes] = await Promise.all([
+      const [ordersRes, customersRes, bannersRes] = await Promise.all([
         supabase.from('orders').select('*').order('created_at', { ascending: false }),
-        supabase.from('products').select('*').order('name'),
         supabase.from('profiles').select('*').eq('role', 'customer').order('total_spent', { ascending: false }),
         supabase.from('banners').select('*').order('order'),
       ])
 
       if (ordersRes.data) setOrders(ordersRes.data)
-      if (productsRes.data) setProducts(productsRes.data)
       if (customersRes.data) setCustomers(customersRes.data)
       if (bannersRes.data) setBanners(bannersRes.data)
       setLoading(false)
     }
 
     fetchData()
+    loadProducts()
 
     // Real-time orders
     const channel = supabase
@@ -285,7 +303,14 @@ export default function AdminPage() {
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [isAdmin, playAlert])
+  }, [isAdmin, playAlert, loadProducts])
+
+  // Re-fetch products every time admin opens the menu tab
+  useEffect(() => {
+    if (isAdmin && activeTab === 'menu') {
+      loadProducts()
+    }
+  }, [activeTab, isAdmin, loadProducts])
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     await supabase.from('orders').update({ status: newStatus } as never).eq('id', orderId)
@@ -309,20 +334,21 @@ export default function AdminPage() {
       category: productForm.category,
       ingredients: productForm.ingredients.split(',').map((s) => s.trim()).filter(Boolean),
       image_url: productForm.image_url || '/products/default.jpg',
-      available: productForm.available,
+      available: productForm.available === true, // força boolean explícito
       model_3d_url: productForm.model_3d_url || null,
     }
 
     if (editingProduct) {
       const { error } = await supabase.from('products').update(data as never).eq('id', editingProduct.id)
       if (error) { alert('Erro ao atualizar produto: ' + error.message); return; }
-      setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? { ...p, ...data } : p)))
     } else {
       const { data: newProduct, error } = await supabase.from('products').insert(data as never).select().single()
       if (error) { alert('Erro ao criar produto: ' + error.message); return; }
       if (newProduct) setProducts((prev) => [...prev, newProduct])
     }
     resetProductForm()
+    // Re-busca do banco para garantir que o estado local reflete o que foi salvo
+    await loadProducts()
   }
 
   const handleDeleteProduct = async (id: string) => {
@@ -647,15 +673,25 @@ export default function AdminPage() {
               <div>
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-bold font-display">Gestão do Cardápio</h2>
-                  <Button
-                    onClick={() => {
-                      resetProductForm()
-                      setShowProductForm(true)
-                    }}
-                    className="gap-1"
-                  >
-                    <Plus className="h-4 w-4" /> Novo Produto
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={loadProducts}
+                      disabled={loadingProducts}
+                      className="gap-1"
+                    >
+                      {loadingProducts ? <Loader2 className="h-4 w-4 animate-spin" /> : '↺'} Atualizar
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        resetProductForm()
+                        setShowProductForm(true)
+                      }}
+                      className="gap-1"
+                    >
+                      <Plus className="h-4 w-4" /> Novo Produto
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Product Form Slide-up */}
@@ -791,22 +827,28 @@ export default function AdminPage() {
 
                 {/* Products List */}
                 <div className="space-y-3">
-                  {products.length === 0 ? (
+                  {loadingProducts ? (
+                    <div className="flex justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : productsError ? (
+                    <div className="text-center py-12">
+                      <UtensilsCrossed className="h-16 w-16 mx-auto mb-4 opacity-20 text-danger" />
+                      <p className="font-semibold text-danger mb-1">Erro ao carregar produtos</p>
+                      <p className="text-xs text-muted-foreground mb-4">{productsError}</p>
+                      <Button onClick={loadProducts} variant="outline" className="gap-2">
+                        <Loader2 className="h-4 w-4" /> Tentar novamente
+                      </Button>
+                    </div>
+                  ) : products.length === 0 ? (
                     <div className="text-center py-12 text-muted-foreground">
                       <UtensilsCrossed className="h-16 w-16 mx-auto mb-4 opacity-20" />
                       <p>Nenhum produto cadastrado</p>
-                      <Button onClick={async () => {
-                        const { DEMO_PRODUCTS } = await import('@/lib/demo-data');
-                        for (const p of DEMO_PRODUCTS) {
-                          await supabase.from('products').insert({
-                            name: p.name, description: p.description, price: p.price,
-                            category: p.category, image_url: p.image_url, ingredients: p.ingredients, available: p.available
-                          } as never);
-                        }
-                        window.location.reload();
-                      }} className="mt-4" variant="outline">
-                        Importar Dados Demo
-                      </Button>
+                      <div className="flex gap-2 justify-center mt-4">
+                        <Button onClick={loadProducts} variant="outline" className="gap-2">
+                          <Loader2 className="h-4 w-4" /> Recarregar
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     products.map((product) => (

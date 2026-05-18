@@ -10,6 +10,8 @@ export const metadata: Metadata = {
 };
 
 import { BottomNav } from "@/components/bottom-nav";
+import { CartSheet } from "@/components/cart-sheet";
+import { CartBar } from "@/components/cart-bar";
 
 export default function RootLayout({
   children,
@@ -30,6 +32,8 @@ export default function RootLayout({
             <div className="flex flex-col min-h-screen pb-20">
               {children}
             </div>
+            <CartBar />
+            <CartSheet />
             <BottomNav />
           </ThemeProvider>
         </SecurityWrapper>

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { MessageCircle, CheckCircle2 } from 'lucide-react'
 import { useRef } from 'react'
+import Image from 'next/image'
 import type { CartItem } from '@/store/cart-store'
 
 type Props = {
@@ -84,6 +85,15 @@ _Gostaria de realizar o pagamento deste pedido._
         <div ref={receiptRef} className="receipt-container">
           {/* Header */}
           <div className="text-center border-b-2 border-dashed border-gray-400 pb-3 mb-3">
+            <div className="flex justify-center mb-2">
+              <Image
+                src="/icone.png"
+                alt="Sabor Raiz"
+                width={80}
+                height={80}
+                className="object-contain"
+              />
+            </div>
             <div className="text-xl font-bold">SABOR RAIZ</div>
             <div className="text-xs mt-1">Delivery Artesanal</div>
             <div className="text-xs mt-2">{formatDate(orderDate)}</div>

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/utils'
 import { useCartStore } from '@/store/cart-store'
+import { BeverageUpsell } from './beverage-upsell'
 import { Minus, Plus, Star, Clock, Flame, ChevronLeft, Heart, Boxes, Camera, Scan, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -37,8 +38,20 @@ export function ProductDetail({ product, open, onOpenChange }: Props) {
   const [viewMode, setViewMode] = useState<'photo' | '3d' | 'ar'>('photo')
   const [quantity, setQuantity] = useState(1)
   const [selectedSides, setSelectedSides] = useState<string[]>(['1'])
+  const [showBeverageUpsell, setShowBeverageUpsell] = useState(false)
+  const [modelLoading, setModelLoading] = useState(false)
   const addItem = useCartStore((s) => s.addItem)
   const openCart = useCartStore((s) => s.openCart)
+
+  const has3D = Boolean(product.model_3d_url)
+
+  // Load @google/model-viewer when user switches to 3D/AR mode
+  useEffect(() => {
+    if ((viewMode === '3d' || viewMode === 'ar') && has3D) {
+      setModelLoading(true)
+      import('@google/model-viewer').finally(() => setModelLoading(false))
+    }
+  }, [viewMode, has3D])
 
   const toggleSide = (id: string) => {
     setSelectedSides(prev => 
@@ -55,11 +68,18 @@ export function ProductDetail({ product, open, onOpenChange }: Props) {
       quantity: quantity,
     })
     onOpenChange(false)
-    openCart()
     setQuantity(1)
+    // Show beverage upsell instead of going directly to cart
+    setShowBeverageUpsell(true)
+  }
+
+  const handleBeverageUpsellClose = () => {
+    setShowBeverageUpsell(false)
+    openCart()
   }
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[95vh] p-0 overflow-hidden rounded-t-[3rem] border-none focus:outline-none">
         <SheetHeader className="sr-only">
@@ -82,7 +102,7 @@ export function ProductDetail({ product, open, onOpenChange }: Props) {
                 <ChevronLeft size={24} strokeWidth={2.5} />
               </button>
 
-              {/* View Mode Toggle */}
+              {/* View Mode Toggle — só mostra 3D/AR se o produto tiver modelo */}
               <div className="flex items-center bg-black/40 backdrop-blur-md rounded-full p-1 border border-white/10">
                 <button 
                   onClick={() => setViewMode('photo')}
@@ -93,24 +113,28 @@ export function ProductDetail({ product, open, onOpenChange }: Props) {
                 >
                   Foto
                 </button>
-                <button 
-                  onClick={() => setViewMode('3d')}
-                  className={cn(
-                    "px-4 py-1.5 rounded-full text-xs font-bold transition-all",
-                    viewMode === '3d' ? "bg-brand-orange text-white" : "text-white/60"
-                  )}
-                >
-                  3D
-                </button>
-                <button 
-                  onClick={() => setViewMode('ar')}
-                  className={cn(
-                    "px-4 py-1.5 rounded-full text-xs font-bold transition-all",
-                    viewMode === 'ar' ? "bg-brand-orange text-white" : "text-white/60"
-                  )}
-                >
-                  AR
-                </button>
+                {has3D && (
+                  <>
+                    <button 
+                      onClick={() => setViewMode('3d')}
+                      className={cn(
+                        "px-4 py-1.5 rounded-full text-xs font-bold transition-all",
+                        viewMode === '3d' ? "bg-brand-orange text-white" : "text-white/60"
+                      )}
+                    >
+                      3D
+                    </button>
+                    <button 
+                      onClick={() => setViewMode('ar')}
+                      className={cn(
+                        "px-4 py-1.5 rounded-full text-xs font-bold transition-all",
+                        viewMode === 'ar' ? "bg-brand-orange text-white" : "text-white/60"
+                      )}
+                    >
+                      AR
+                    </button>
+                  </>
+                )}
               </div>
 
               <button className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-gray-800 shadow-sm">
@@ -126,18 +150,49 @@ export function ProductDetail({ product, open, onOpenChange }: Props) {
                   alt={product.name} 
                   className="w-full h-full object-cover"
                 />
+              ) : has3D ? (
+                <div className="relative w-full h-full bg-gradient-to-br from-[#0a1a0a] via-[#1a2e1a] to-[#4a2500]">
+                  {modelLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                      <div className="flex flex-col items-center gap-2">
+                        <Camera size={32} className="text-brand-orange animate-pulse" />
+                        <p className="text-white/60 text-xs">Carregando modelo 3D...</p>
+                      </div>
+                    </div>
+                  )}
+                  {/* @ts-ignore */}
+                  <model-viewer
+                    src={product.model_3d_url!}
+                    alt={`Modelo 3D de ${product.name}`}
+                    auto-rotate
+                    camera-controls
+                    shadow-intensity="1"
+                    environment-image="neutral"
+                    exposure="1.2"
+                    interaction-prompt="none"
+                    ar={viewMode === 'ar' ? true : undefined}
+                    onLoad={() => setModelLoading(false)}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      background: 'transparent',
+                    }}
+                  />
+                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center text-white gap-4">
-                   {/* Simplificado para o exemplo, o model-viewer ficaria aqui */}
-                   <Boxes size={120} className="text-brand-orange animate-pulse" />
-                   <p className="text-sm font-medium opacity-60">Visualização 3D Ativada</p>
+                  <Boxes size={80} className="text-brand-orange/40" />
+                  <p className="text-sm font-medium text-white/40">Modelo 3D não disponível</p>
                 </div>
               )}
             </div>
 
-            {/* AR Button Overlay */}
-            {viewMode === '3d' && (
-              <button className="absolute bottom-6 right-6 bg-white rounded-full px-6 py-3 flex items-center gap-2 shadow-2xl animate-bounce-subtle">
+            {/* AR Button Overlay — só em modo 3D */}
+            {viewMode === '3d' && has3D && (
+              <button 
+                onClick={() => setViewMode('ar')}
+                className="absolute bottom-6 right-6 bg-white rounded-full px-6 py-3 flex items-center gap-2 shadow-2xl animate-bounce-subtle"
+              >
                 <Scan size={20} className="text-brand-green" />
                 <span className="text-sm font-bold text-brand-green uppercase tracking-wider">Ver em AR</span>
               </button>
@@ -263,5 +318,10 @@ export function ProductDetail({ product, open, onOpenChange }: Props) {
         </div>
       </SheetContent>
     </Sheet>
+      <BeverageUpsell 
+        open={showBeverageUpsell} 
+        onClose={handleBeverageUpsellClose} 
+      />
+    </>
   )
 }

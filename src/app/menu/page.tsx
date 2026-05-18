@@ -1,19 +1,23 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ChevronLeft, SlidersHorizontal, LayoutGrid } from 'lucide-react'
 import { ProductCard } from '@/components/product-card'
 import { ProductDetail } from '@/components/product-detail'
-import { CartBar } from '@/components/cart-bar'
+
 import { DEMO_PRODUCTS, DEMO_CATEGORIES } from '@/lib/demo-data'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
 export default function MenuPage() {
+  const searchParams = useSearchParams()
   const [products, setProducts] = useState(DEMO_PRODUCTS)
   const [categories, setCategories] = useState(DEMO_CATEGORIES)
-  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [activeCategory, setActiveCategory] = useState<string | null>(
+    searchParams.get('category')
+  )
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
 
@@ -102,7 +106,7 @@ export default function MenuPage() {
         ))}
       </main>
 
-      <CartBar />
+
 
       {selectedProduct && (
         <ProductDetail
